@@ -12,6 +12,7 @@ class Tester(object):
         pass
 
     def run_one_test(self, test_dict):
+        results_dict = {}
         test_name = test_dict.keys()[0]
         print "test_name: {}".format(test_name)
         m_f = test_dict[test_name].get('module_and_function', None)
@@ -31,13 +32,16 @@ class Tester(object):
                 fun = m_f,
                 arg = t_args,
                 kwarg = t_kwargs)
-        if assertion == "assertEqual":
-            value = self.assertEqual(expected_return, val)
-        elif assertion == "assertNotEqual":
-            value = self.assertNotEqual(expected_return, val)
-        else:
-            value = "???"
-        return value
+        for k,v in val.items():
+            if assertion == "assertEqual":
+                value = self.assertEqual(expected_return, v)
+                results_dict[k] = value
+            elif assertion == "assertNotEqual":
+                value = self.assertNotEqual(expected_return, v)
+                results_dict[k] = value
+            else:
+                value = "???"
+        return (test_name, results_dict)
 
 
     def call_salt_command(self, tgt, fun, arg=(), timeout=None,
@@ -57,9 +61,9 @@ class Tester(object):
     def assertEqual(self, expected, returned):
         result = True
         try:
-            assert (expected == returned)
-        except AssertionError:
-            result = False
+            assert (expected == returned),"Expected: {}, Returned: {}".format(expected, returned)
+        except AssertionError as err:
+            result = (False, err)
         return result
 
     def assertNotEqual(self, expected, returned):
@@ -69,8 +73,7 @@ class Tester(object):
         except AssertionError:
             result = False
         return result
-    
-    
+
     def run_test_plan(self):
         for p in plan.keys():
             self.run_one_test(test)
@@ -89,10 +92,12 @@ def main(test_dict):
 if __name__ == "__main__":
     test_dict = {'example-test':
                      {'module_and_function': 'cmd.run',
-                     'args': 'uptime',
+                     'args': 'echo "hello"',
                      'kwargs':'',
                      'pillar-data':'', 
-                     'assertion': 'assertNotEqual',
-                     'expected-return':  '12345'}
+                     #'assertion': 'assertNotEqual',
+                     'assertion': 'assertEqual',
+                     #'expected-return':  '12345'}
+                     'expected-return':  'hellos'}
                 }
     main(test_dict)
