@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-
+'''This program allows for unit-test like testing of salt state logic
+   Author: William Cannon  william period cannon at gmail dot com'''
+import yaml
 import salt.client
 import salt.config
 
@@ -12,9 +14,11 @@ class Tester(object):
         pass
 
     def run_one_test(self, test_dict):
+        #print "\n\ntest_dict contains: {}\n\n".format(test_dict)
         results_dict = {}
         test_name = test_dict.keys()[0]
-        print "test_name: {}".format(test_name)
+        #test_name = test_dict.keys()
+        print "\ntest_name: {}".format(test_name)
         m_f = test_dict[test_name].get('module_and_function', None)
         print "module_and_function: {}".format(m_f)
         t_args = test_dict[test_name].get('args', None)
@@ -28,6 +32,7 @@ class Tester(object):
         print "assertion: {}".format(assertion)
         expected_return = test_dict[test_name].get('expected-return', None)
         print "expected_return: {}".format(expected_return)
+        print "\n\n"
         val = self.call_salt_command(tgt='*',
                 fun = m_f,
                 arg = t_args,
@@ -38,6 +43,12 @@ class Tester(object):
                 results_dict[k] = value
             elif assertion == "assertNotEqual":
                 value = self.assertNotEqual(expected_return, v)
+                results_dict[k] = value
+            elif assertion == "assertTrue":
+                value = self.assertTrue(expected_return, v)
+                results_dict[k] = value
+            elif assertion == "assertFalse":
+                value = self.assertFalse(expected_return, v)
                 results_dict[k] = value
             else:
                 value = "???"
@@ -69,25 +80,79 @@ class Tester(object):
     def assertNotEqual(self, expected, returned):
         result = True
         try:
-            assert (expected != returned)
+            assert (expected != returned),"Expected: {}, Returned: {}".format(expected, returned)
         except AssertionError:
-            result = False
+            result = (False, err)
         return result
 
-    def run_test_plan(self):
-        for p in plan.keys():
-            self.run_one_test(test)
+    def assertTrue(self, expected, returned):
+        # may need to cast returned to string
+        result = True
+        try:
+            assert (returned == True),"Expected: {}, Returned: {}".format(True, returned)
+        except AssertionError:
+            result = (False, err)
+        return result
 
-    def print_results(self):
-        pass
+    def assertFalse(self, expected, returned):
+        # may need to cast returned to string
+        result = True
+        try:
+            assert (returned == False),"Expected: {}, Returned: {}".format(False, returned)
+        except AssertionError:
+            result = (False, err)
+        return result
+
+
+class TestLoader(object):
+
+    def __init__(self, filename):
+        self.filepath = filename
+        self.contents_yaml = None
+
+    def load_file(self):
+        try:
+            f = open(self.filepath, 'r')
+            self.contents_yaml = yaml.load(f)
+            #print "YAML as dict:  {}".format( self.contents_yaml)
+        except:
+            raise
+        return
+
+    def check_file_is_valid(self):
+        is_valid = True
+        for k in self.contents_yaml.keys():
+            ok = self.check_test_is_valid(self.contents_yaml[k])
+            if not ok:
+                is_valid = False
+        return is_valid
+       
+    def check_test_is_valid(self, test):
+        # check each test from file ensuring miniumum necessary params are met, no value check
+        # must have module_and_function, assertion, expected-return
+        is_valid = True
+        reqs = ['module_and_function', 'assertion', 'expected-return']
+        for k in test.keys():
+            if k in reqs:
+                reqs.remove(k)
+        if reqs != None:
+            is_valid = False
+        return is_valid
+
+    def get_test_as_dict(self):
+        try:
+            self.load_file()
+            self.check_file_is_valid()
+        except:
+            raise
+        return self.contents_yaml
 
 
 def main(test_dict):
     t = Tester()
-    result = t.run_one_test(test_dict)
-    print result
-    #for k,v in result.items():
-    #    print k, v
+    for k,v in test_dict.items():
+        result = t.run_one_test({k:v})
+        print result
 
 if __name__ == "__main__":
     test_dict = {'example-test':
@@ -98,6 +163,9 @@ if __name__ == "__main__":
                      #'assertion': 'assertNotEqual',
                      'assertion': 'assertEqual',
                      #'expected-return':  '12345'}
-                     'expected-return':  'hellos'}
+                     'expected-return':  'hello'}
                 }
-    main(test_dict)
+    t = TestLoader('testfile.tst')
+    mydict = t.get_test_as_dict() 
+    #print "mydict contains: {}".format(mydict)
+    main(mydict)
