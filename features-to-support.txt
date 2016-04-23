@@ -2,21 +2,15 @@ Assertions to support:
 assertEqual
 assertNotEqual
 assertTrue
-assertFalse(expr, msg=None)
-assertIs
-assertIsNot
+assertFalse
 assertIsNone
 assertIsNotNone
 assertIn
 assertNotIn
-assertAlmostEqual 	 
-assertNotAlmostEqual	 
 assertGreater
 assertGreaterEqual
 assertLess
 assertLessEqual
-assertRegexpMatches
-assertNotRegexpMatches
 assertItemsEqual
 assertDictContainsSubset
 
@@ -44,6 +38,8 @@ how to test a php install + library install
 Consider running tests as groups for an increase in speed
 
 Consider adding an optional timeout flag to increase timeout thresholds 
+
+Once code is feature complete it will be converted to a pip intallable format and pep8 syntax formatted
 
 
 
