@@ -31,7 +31,13 @@ class Tester(object):
                 fun = m_f,
                 arg = t_args,
                 kwarg = t_kwargs)
-        return val
+        if assertion == "assertEqual":
+            value = self.assertEqual(expected_return, val)
+        elif assertion == "assertNotEqual":
+            value = self.assertNotEqual(expected_return, val)
+        else:
+            value = "???"
+        return value
 
 
     def call_salt_command(self, tgt, fun, arg=(), timeout=None,
@@ -48,6 +54,23 @@ class Tester(object):
             value = False
         return value
 
+    def assertEqual(self, expected, returned):
+        result = True
+        try:
+            assert (expected == returned)
+        except AssertionError:
+            result = False
+        return result
+
+    def assertNotEqual(self, expected, returned):
+        result = True
+        try:
+            assert (expected != returned)
+        except AssertionError:
+            result = False
+        return result
+    
+    
     def run_test_plan(self):
         for p in plan.keys():
             self.run_one_test(test)
@@ -59,8 +82,9 @@ class Tester(object):
 def main(test_dict):
     t = Tester()
     result = t.run_one_test(test_dict)
-    for k,v in result.items():
-        print k, v
+    print result
+    #for k,v in result.items():
+    #    print k, v
 
 if __name__ == "__main__":
     test_dict = {'example-test':
