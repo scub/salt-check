@@ -13,3 +13,11 @@ example-test-2:
   pillar-data: ''
   assertion: assertEqual
   expected-return:  'hello'
+
+example-test-3:
+  module_and_function: file.file_exists
+  args: /tmp/hello
+  kwargs: ''
+  pillar-data: ''
+  assertion: assertEqual
+  expected-return:  True
