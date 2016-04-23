@@ -1,0 +1,50 @@
+Assertions to support:
+assertEqual
+assertNotEqual
+assertTrue
+assertFalse(expr, msg=None)
+assertIs
+assertIsNot
+assertIsNone
+assertIsNotNone
+assertIn
+assertNotIn
+assertAlmostEqual 	 
+assertNotAlmostEqual	 
+assertGreater
+assertGreaterEqual
+assertLess
+assertLessEqual
+assertRegexpMatches
+assertNotRegexpMatches
+assertItemsEqual
+assertDictContainsSubset
+
+Salt interfaces to support by way of pass-through to the salt interface directly:
+salt (standard minion call)
+salt (over ssh)
+salt-call
+
+Ability to save run output to a named file
+Ability to test multiple tests via command line file
+Ability to walk an entire file tree (given a dir to start in) and run all tests
+
+Beautifully useful output in terms of what test was run on what agent with result where failing tests show the reason the test failed
+
+Input files are yaml, using the parameters of any given salt module
+
+Example tests for commonly used scenarios e.g.:
+package installed
+service running
+file contents or contains, permissions and etc
+process listening on a particular port
+how to test an apache install
+how to test a php install + library install
+
+Consider running tests as groups for an increase in speed
+
+Consider adding an optional timeout flag to increase timeout thresholds 
+
+
+
+
