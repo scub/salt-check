@@ -18,21 +18,20 @@ class Tester(object):
         results_dict = {}
         test_name = test_dict.keys()[0]
         #test_name = test_dict.keys()
-        print "\ntest_name: {}".format(test_name)
+        #print "\n\ntest_name: {}".format(test_name)
         m_f = test_dict[test_name].get('module_and_function', None)
-        print "module_and_function: {}".format(m_f)
+        #print "module_and_function: {}".format(m_f)
         t_args = test_dict[test_name].get('args', None)
         t_args = [t_args]
-        print "args: {}".format(t_args)
+        #print "args: {}".format(t_args)
         t_kwargs = test_dict[test_name].get('kwargs', None)
-        print "kwargs: {}".format(t_kwargs)
+        #print "kwargs: {}".format(t_kwargs)
         pillar_data = test_dict[test_name].get('pillar_data', None)
-        print "pillar_data: {}".format(pillar_data)
+        #print "pillar_data: {}".format(pillar_data)
         assertion = test_dict[test_name].get('assertion', None)
-        print "assertion: {}".format(assertion)
+        #print "assertion: {}".format(assertion)
         expected_return = test_dict[test_name].get('expected-return', None)
-        print "expected_return: {}".format(expected_return)
-        print "\n\n"
+        #print "expected_return: {}".format(expected_return)
         val = self.call_salt_command(tgt='*',
                 fun = m_f,
                 arg = t_args,
@@ -152,7 +151,12 @@ def main(test_dict):
     t = Tester()
     for k,v in test_dict.items():
         result = t.run_one_test({k:v})
-        print result
+        test_name = result[0]
+        k_v = result[1]
+        print "\nTest Name:  {}".format(test_name)
+        print "Minion      Test-Result"
+        for k,v in k_v.items():
+            print "{}         {}".format(k, v)
 
 if __name__ == "__main__":
     test_dict = {'example-test':
