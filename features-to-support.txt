@@ -41,6 +41,12 @@ Consider adding an optional timeout flag to increase timeout thresholds
 
 Once code is feature complete it will be converted to a pip intallable format and pep8 syntax formatted
 
+Output should be flexible by cli option
+- typical output for unit tests (passed: X, failed: Y)  group by passed and failed
+- output to json
+- output to yaml
+
+
 
 
 
