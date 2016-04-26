@@ -4,6 +4,7 @@
 import yaml
 import salt.client
 import salt.config
+import argparse
 
 class Tester(object):
 
@@ -13,7 +14,7 @@ class Tester(object):
     def load_test_plan(self, path):
         pass
 
-    def run_one_test(self, test_dict):
+    def run_one_test(self, minion_list, test_dict):
         #print "\n\ntest_dict contains: {}\n\n".format(test_dict)
         results_dict = {}
         test_name = test_dict.keys()[0]
@@ -32,10 +33,11 @@ class Tester(object):
         #print "assertion: {}".format(assertion)
         expected_return = test_dict[test_name].get('expected-return', None)
         #print "expected_return: {}".format(expected_return)
-        val = self.call_salt_command(tgt='*',
+        val = self.call_salt_command(tgt=minion_list,
                 fun = m_f,
                 arg = t_args,
-                kwarg = t_kwargs)
+                kwarg = t_kwargs,
+                expr_form = 'list')
         for k,v in val.items():
             if assertion == "assertEqual":
                 value = self.assertEqual(expected_return, v)
@@ -147,10 +149,10 @@ class TestLoader(object):
         return self.contents_yaml
 
 
-def main(test_dict):
+def main(minion_list, test_dict):
     t = Tester()
     for k,v in test_dict.items():
-        result = t.run_one_test({k:v})
+        result = t.run_one_test(minion_list, {k:v})
         test_name = result[0]
         k_v = result[1]
         print "\nTest Name:  {}".format(test_name)
@@ -159,17 +161,14 @@ def main(test_dict):
             print "{}         {}".format(k, v)
 
 if __name__ == "__main__":
-    test_dict = {'example-test':
-                     {'module_and_function': 'cmd.run',
-                     'args': 'echo "hello"',
-                     'kwargs':'',
-                     'pillar-data':'', 
-                     #'assertion': 'assertNotEqual',
-                     'assertion': 'assertEqual',
-                     #'expected-return':  '12345'}
-                     'expected-return':  'hello'}
-                }
-    t = TestLoader('testfile.tst')
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument('-L', '--list', action="store", dest="L")
+    parser.add_argument('testfile', action="store")
+    args = parser.parse_args()
+    print "list: {}".format(args.L)
+    print "testfile: {}".format(args.testfile)
+
+    t = TestLoader(args.testfile)
     mydict = t.get_test_as_dict() 
     #print "mydict contains: {}".format(mydict)
-    main(mydict)
+    main(minion_list=args.L, test_dict=mydict)
