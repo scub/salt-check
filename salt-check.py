@@ -171,4 +171,7 @@ if __name__ == "__main__":
     t = TestLoader(args.testfile)
     mydict = t.get_test_as_dict() 
     #print "mydict contains: {}".format(mydict)
-    main(minion_list=args.L, test_dict=mydict)
+    minion_list_str = args.L
+    minion_list = minion_list_str.split(",")
+    print "minion_list: {}".format(minion_list)
+    main(minion_list=minion_list, test_dict=mydict)
