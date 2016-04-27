@@ -23,7 +23,8 @@ class Tester(object):
         m_f = test_dict[test_name].get('module_and_function', None)
         #print "module_and_function: {}".format(m_f)
         t_args = test_dict[test_name].get('args', None)
-        t_args = [t_args]
+        t_args = t_args.split()
+        #t_args = [t_args]
         #print "args: {}".format(t_args)
         t_kwargs = test_dict[test_name].get('kwargs', None)
         #print "kwargs: {}".format(t_kwargs)
