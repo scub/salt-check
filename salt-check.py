@@ -152,6 +152,7 @@ class TestLoader(object):
 
 def main(minion_list, test_dict):
     t = Tester()
+    results_dict = {} # for holding results of all tests
     for k,v in test_dict.items():
         result = t.run_one_test(minion_list, {k:v})
         test_name = result[0]
@@ -159,7 +160,21 @@ def main(minion_list, test_dict):
         print "\nTest Name:  {}".format(test_name)
         print "Minion      Test-Result"
         for k,v in k_v.items():
+            res = results_dict.get(k, None)
+            if not res:
+                results_dict[k] = {test_name : v}
+            else:
+                res[test_name] = v
+                results_dict[k] = res 
             print "{}         {}".format(k, v)
+    print 
+    print "Results of tests by minion id: "
+    for k,v in results_dict.items(): # get minion, and set of tests
+        print "Minion id: {}".format(k)
+        for l,w in results_dict[k].items(): # print test and result
+            print "Test: {}".format(l)
+            print "Result: {}".format(w)
+        print
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help=True)
