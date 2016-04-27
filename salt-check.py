@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 '''This program allows for unit-test like testing of salt state logic
    Author: William Cannon  william period cannon at gmail dot com'''
+import json
 import yaml
 import salt.client
 import salt.config
@@ -10,10 +11,8 @@ class Tester(object):
 
     def __init__(self):
         self.salt_lc = salt.client.LocalClient()
+        self.results_dict = {}
     
-    def load_test_plan(self, path):
-        pass
-
     def run_one_test(self, minion_list, test_dict):
         #print "\n\ntest_dict contains: {}\n\n".format(test_dict)
         results_dict = {}
@@ -104,6 +103,25 @@ class Tester(object):
         except AssertionError:
             result = (False, err)
         return result
+   
+    def print_results_as_text(self):
+        print "\nResults of tests by minion id: "
+        for k,v in self.results_dict.items(): # get minion, and set of tests
+            print "Minion id: {}".format(k)
+            for l,w in self.results_dict[k].items(): # print test and result
+                print "Test: {}".format(l)
+                print "Result: {}".format(w)
+            print
+
+    # broken
+    def print_results_as_yaml(self):
+        myyaml = yaml.dump(self.results_dict)
+        print myyaml
+    
+    # broken
+    def print_results_as_json(self):
+        myjson = json.dumps(self.results_dict)
+        print myjson
 
 
 class TestLoader(object):
@@ -152,29 +170,24 @@ class TestLoader(object):
 
 def main(minion_list, test_dict):
     t = Tester()
-    results_dict = {} # for holding results of all tests
+    t.results_dict = {} # for holding results of all tests
     for k,v in test_dict.items():
         result = t.run_one_test(minion_list, {k:v})
         test_name = result[0]
         k_v = result[1]
-        print "\nTest Name:  {}".format(test_name)
-        print "Minion      Test-Result"
+        #print "\nTest Name:  {}".format(test_name)
+        #print "Minion      Test-Result"
         for k,v in k_v.items():
-            res = results_dict.get(k, None)
+            res = t.results_dict.get(k, None)
             if not res:
-                results_dict[k] = {test_name : v}
+                t.results_dict[k] = {test_name : v}
             else:
                 res[test_name] = v
-                results_dict[k] = res 
-            print "{}         {}".format(k, v)
+                t.results_dict[k] = res 
+            #print "{}         {}".format(k, v)
+    t.print_results_as_text()
     print 
-    print "Results of tests by minion id: "
-    for k,v in results_dict.items(): # get minion, and set of tests
-        print "Minion id: {}".format(k)
-        for l,w in results_dict[k].items(): # print test and result
-            print "Test: {}".format(l)
-            print "Result: {}".format(w)
-        print
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help=True)
