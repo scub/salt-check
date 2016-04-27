@@ -26,7 +26,7 @@ example-test-4-md5sum:
   module_and_function: file.check_hash
   args: /tmp/sample-testfile-one md5:7051b07b9c41d2996accb575c0877861
   kwargs: ''
-  pillar-data: ''
+  pillar-data: 'sample_file_pillar_key: bad data'
   assertion: assertEqual
   expected-return: True
   
