@@ -113,7 +113,7 @@ class Tester(object):
             for l,w in self.results_dict[k].items(): # print test and result
                 print "Test: {}".format(l).ljust(40),
                 if w != True:
-                    print "Result: {}".format(w[1]).ljust(40)
+                    print "Result: False --> {}".format(w[1]).ljust(40)
                 else:
                     print "Result: {}".format(w).ljust(40)
                 #print "Test: {}                           Result: {}".format(l,w)
