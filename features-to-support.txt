@@ -1,3 +1,5 @@
+Unit tests to create:  a unit test for each piece of functionality - make this very solid and dependable
+
 Assertions to support:
 assertEqual
 assertNotEqual
