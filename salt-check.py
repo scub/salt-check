@@ -138,11 +138,15 @@ class Tester(object):
                 #print "Test: {}                           Result: {}".format(l,w)
             print
 
-    def print_results_as_text_summary(self):
+    def print_results_verbose_low(self):
         print "\nRESULTS OF TESTS BY MINION ID:\n "
         for k,v in self.results_dict.items(): # get minion, and set of tests
-            print "Minion id: {}".format(k)
+            print "\nMinion id: {}".format(k)
             print "Summary: Passed: {}, Failed: {}".format(self.results_dict_summary[k].get('pass', 0), self.results_dict_summary[k].get('fail', 0) )
+            for l,w in self.results_dict[k].items(): # print test and result
+                if w != True:
+                    print "Test: {}".format(l).ljust(40),
+                    print "Result: False --> {}".format(w[1]).ljust(40)
 
     # broken
     def print_results_as_yaml(self):
@@ -199,7 +203,7 @@ class TestLoader(object):
         return self.contents_yaml
 
 
-def main(minion_list, test_dict):
+def main(minion_list, test_dict, verbose):
     t = Tester()
     t.results_dict = {} # for holding results of all tests
     for k,v in test_dict.items():
@@ -217,17 +221,21 @@ def main(minion_list, test_dict):
                 t.results_dict[k] = res 
             #print "{}         {}".format(k, v)
     t.summarize_results()
-    t.print_results_as_text()
+    if verbose == 'low':
+        t.print_results_verbose_low()
+    else:
+        t.print_results_as_text()
     print 
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument('-L', '--list', action="store", dest="L")
-    parser.add_argument('-v', '--verbose', action="store", dest="v")
     parser.add_argument('testfile', action="store")
+    parser.add_argument('-v', '--verbose', action="store", dest="verbose", default='low')
     args = parser.parse_args()
     #print "list: {}".format(args.L)
+    #print "verbose: {}".format(args.verbose)
     #print "testfile: {}".format(args.testfile)
 
     t = TestLoader(args.testfile)
@@ -236,4 +244,4 @@ if __name__ == "__main__":
     minion_list_str = args.L
     minion_list = minion_list_str.split(",")
     #print "minion_list: {}".format(minion_list)
-    main(minion_list=minion_list, test_dict=mydict)
+    main(minion_list=minion_list, test_dict=mydict, verbose=args.verbose)
