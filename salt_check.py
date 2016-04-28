@@ -13,7 +13,7 @@ class Tester(object):
         self.salt_lc = salt.client.LocalClient()
         self.results_dict = {}
         self.results_dict_summary = {}
-    
+
     def run_one_test(self, minion_list, test_dict):
         #print "\n\ntest_dict contains: {}\n\n".format(test_dict)
         results_dict = {}
@@ -37,11 +37,11 @@ class Tester(object):
         expected_return = test_dict[test_name].get('expected-return', None)
         #print "expected_return: {}".format(expected_return)
         val = self.call_salt_command(tgt=minion_list,
-                fun = m_f,
-                arg = t_args,
-                kwarg = t_kwargs,
-                expr_form = 'list')
-        for k,v in val.items():
+                                     fun=m_f,
+                                     arg=t_args,
+                                     kwarg=t_kwargs,
+                                     expr_form='list')
+        for k, v in val.items():
             if assertion == "assertEqual":
                 value = self.assertEqual(expected_return, v)
                 results_dict[k] = value
@@ -76,7 +76,7 @@ class Tester(object):
     def assertEqual(self, expected, returned):
         result = True
         try:
-            assert (expected == returned),"{} is not equal to {}".format(expected, returned)
+            assert (expected == returned), "{} is not equal to {}".format(expected, returned)
         except AssertionError as err:
             result = [False, err]
         return result
@@ -84,7 +84,7 @@ class Tester(object):
     def assertNotEqual(self, expected, returned):
         result = True
         try:
-            assert (expected != returned),"{} is equal to {}".format(expected, returned)
+            assert (expected != returned), "{} is equal to {}".format(expected, returned)
         except AssertionError:
             result = [False, err]
         return result
@@ -93,7 +93,7 @@ class Tester(object):
         # may need to cast returned to string
         result = True
         try:
-            assert (returned == True),"{} not True".format(returned)
+            assert (returned == True), "{} not True".format(returned)
         except AssertionError:
             result = [False, err]
         return result
@@ -102,18 +102,21 @@ class Tester(object):
         # may need to cast returned to string
         result = True
         try:
-            assert (returned == False),"{} not False".format(returned)
+            assert (returned == False), "{} not False".format(returned)
         except AssertionError:
             result = [False, err]
         return result
 
     def summarize_results(self):
         # save this to another separate data structure for easy retrieval in "compact/regular" mode
-        '''Walk through the results, and add a summary "passed/failed" count of tests to each minion'''   
-        for k,v in self.results_dict.items(): # get minion, and set of tests
+        '''
+        Walk through the results, and add a summary "passed/failed"
+        count of tests to each minion
+        '''
+        for k, v in self.results_dict.items(): # get minion, and set of tests
             #print "Minion id: {}".format(k)
             sum = {'pass':0, 'fail':0}
-            for l,w in self.results_dict[k].items(): # print test and result
+            for l, w in self.results_dict[k].items(): # print test and result
                 #print "Test: {}".format(l).ljust(40),
                 if w != True:
                     sum['fail'] = sum.get('fail', 0) + 1
@@ -122,14 +125,16 @@ class Tester(object):
                     sum['pass'] = sum.get('pass', 0) + 1
                     #print "Result: {}".format(w).ljust(40)
             self.results_dict_summary[k] = sum
-        return 
+        return
 
     def print_results_as_text(self):
         print "\nRESULTS OF TESTS BY MINION ID:\n "
-        for k,v in self.results_dict.items(): # get minion, and set of tests
+        for k, v in self.results_dict.items(): # get minion, and set of tests
             print "Minion id: {}".format(k)
-            print "Summary: Passed: {}, Failed: {}".format(self.results_dict_summary[k].get('pass', 0), self.results_dict_summary[k].get('fail', 0) )
-            for l,w in self.results_dict[k].items(): # print test and result
+            print "Summary: Passed: {}, Failed: {}".format(
+                self.results_dict_summary[k].get('pass', 0),
+                self.results_dict_summary[k].get('fail', 0))
+            for l, w in self.results_dict[k].items(): # print test and result
                 print "Test: {}".format(l).ljust(40),
                 if w != True:
                     print "Result: False --> {}".format(w[1]).ljust(40)
@@ -140,10 +145,12 @@ class Tester(object):
 
     def print_results_verbose_low(self):
         print "\nRESULTS OF TESTS BY MINION ID:\n "
-        for k,v in self.results_dict.items(): # get minion, and set of tests
+        for k, v in self.results_dict.items(): # get minion, and set of tests
             print "\nMinion id: {}".format(k)
-            print "Summary: Passed: {}, Failed: {}".format(self.results_dict_summary[k].get('pass', 0), self.results_dict_summary[k].get('fail', 0) )
-            for l,w in self.results_dict[k].items(): # print test and result
+            print "Summary: Passed: {}, Failed: {}".format(
+                self.results_dict_summary[k].get('pass', 0),
+                self.results_dict_summary[k].get('fail', 0))
+            for l, w in self.results_dict[k].items(): # print test and result
                 if w != True:
                     print "Test: {}".format(l).ljust(40),
                     print "Result: False --> {}".format(w[1]).ljust(40)
@@ -152,7 +159,7 @@ class Tester(object):
     def print_results_as_yaml(self):
         myyaml = yaml.dump(self.results_dict)
         print myyaml
-    
+
     # broken - have to get rid of tuples in AssertionError output?
     def print_results_as_json(self):
         myjson = json.dumps(self.results_dict)
@@ -181,7 +188,7 @@ class TestLoader(object):
             if not ok:
                 is_valid = False
         return is_valid
-       
+
     def check_test_is_valid(self, test):
         # check each test from file ensuring miniumum necessary params are met, no value check
         # must have module_and_function, assertion, expected-return
@@ -206,26 +213,26 @@ class TestLoader(object):
 def main(minion_list, test_dict, verbose):
     t = Tester()
     t.results_dict = {} # for holding results of all tests
-    for k,v in test_dict.items():
+    for k, v in test_dict.items():
         result = t.run_one_test(minion_list, {k:v})
         test_name = result[0]
         k_v = result[1]
         #print "\nTest Name:  {}".format(test_name)
         #print "Minion      Test-Result"
-        for k,v in k_v.items():
+        for k, v in k_v.items():
             res = t.results_dict.get(k, None)
             if not res:
                 t.results_dict[k] = {test_name : v}
             else:
                 res[test_name] = v
-                t.results_dict[k] = res 
+                t.results_dict[k] = res
             #print "{}         {}".format(k, v)
     t.summarize_results()
     if verbose == 'low':
         t.print_results_verbose_low()
     else:
         t.print_results_as_text()
-    print 
+    print
 
 
 if __name__ == "__main__":
@@ -239,7 +246,7 @@ if __name__ == "__main__":
     #print "testfile: {}".format(args.testfile)
 
     t = TestLoader(args.testfile)
-    mydict = t.get_test_as_dict() 
+    mydict = t.get_test_as_dict()
     #print "mydict contains: {}".format(mydict)
     minion_list_str = args.L
     minion_list = minion_list_str.split(",")
