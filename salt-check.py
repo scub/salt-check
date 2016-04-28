@@ -22,7 +22,9 @@ class Tester(object):
         m_f = test_dict[test_name].get('module_and_function', None)
         #print "module_and_function: {}".format(m_f)
         t_args = test_dict[test_name].get('args', None)
-        t_args = t_args.split()
+        #if not t_args[0] == "'"  and not t_args[-1] == "'":
+        if type(t_args) != list:
+            t_args = t_args.split()
         #t_args = [t_args]
         #print "args: {}".format(t_args)
         t_kwargs = test_dict[test_name].get('kwargs', None)
@@ -53,7 +55,7 @@ class Tester(object):
                 results_dict[k] = value
             else:
                 value = "???"
-        return (test_name, results_dict)
+        return [test_name, results_dict]
 
 
     def call_salt_command(self, tgt, fun, arg=(), timeout=None,
@@ -73,44 +75,48 @@ class Tester(object):
     def assertEqual(self, expected, returned):
         result = True
         try:
-            assert (expected == returned),"Expected: {}, Returned: {}".format(expected, returned)
+            assert (expected == returned),"{} is not equal to {}".format(expected, returned)
         except AssertionError as err:
-            result = (False, err)
+            result = [False, err]
         return result
 
     def assertNotEqual(self, expected, returned):
         result = True
         try:
-            assert (expected != returned),"Expected: {}, Returned: {}".format(expected, returned)
+            assert (expected != returned),"{} is equal to {}".format(expected, returned)
         except AssertionError:
-            result = (False, err)
+            result = [False, err]
         return result
 
     def assertTrue(self, expected, returned):
         # may need to cast returned to string
         result = True
         try:
-            assert (returned == True),"Expected: {}, Returned: {}".format(True, returned)
+            assert (returned == True),"{} not True".format(returned)
         except AssertionError:
-            result = (False, err)
+            result = [False, err]
         return result
 
     def assertFalse(self, expected, returned):
         # may need to cast returned to string
         result = True
         try:
-            assert (returned == False),"Expected: {}, Returned: {}".format(False, returned)
+            assert (returned == False),"{} not False".format(returned)
         except AssertionError:
-            result = (False, err)
+            result = [False, err]
         return result
    
     def print_results_as_text(self):
-        print "\nResults of tests by minion id: "
+        print "\nRESULTS OF TESTS BY MINION ID:\n "
         for k,v in self.results_dict.items(): # get minion, and set of tests
             print "Minion id: {}".format(k)
             for l,w in self.results_dict[k].items(): # print test and result
-                print "Test: {}".format(l)
-                print "Result: {}".format(w)
+                print "Test: {}".format(l).ljust(40),
+                if w != True:
+                    print "Result: {}".format(w[1]).ljust(40)
+                else:
+                    print "Result: {}".format(w).ljust(40)
+                #print "Test: {}                           Result: {}".format(l,w)
             print
 
     # broken
@@ -118,7 +124,7 @@ class Tester(object):
         myyaml = yaml.dump(self.results_dict)
         print myyaml
     
-    # broken
+    # broken - have to get rid of tuples in AssertionError output?
     def print_results_as_json(self):
         myjson = json.dumps(self.results_dict)
         print myjson
