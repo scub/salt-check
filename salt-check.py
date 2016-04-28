@@ -12,6 +12,7 @@ class Tester(object):
     def __init__(self):
         self.salt_lc = salt.client.LocalClient()
         self.results_dict = {}
+        self.results_dict_summary = {}
     
     def run_one_test(self, minion_list, test_dict):
         #print "\n\ntest_dict contains: {}\n\n".format(test_dict)
@@ -105,11 +106,29 @@ class Tester(object):
         except AssertionError:
             result = [False, err]
         return result
-   
+
+    def summarize_results(self):
+        # save this to another separate data structure for easy retrieval in "compact/regular" mode
+        '''Walk through the results, and add a summary "passed/failed" count of tests to each minion'''   
+        for k,v in self.results_dict.items(): # get minion, and set of tests
+            #print "Minion id: {}".format(k)
+            sum = {'pass':0, 'fail':0}
+            for l,w in self.results_dict[k].items(): # print test and result
+                #print "Test: {}".format(l).ljust(40),
+                if w != True:
+                    sum['fail'] = sum.get('fail', 0) + 1
+                    #print "Result: False --> {}".format(w[1]).ljust(40)
+                else:
+                    sum['pass'] = sum.get('pass', 0) + 1
+                    #print "Result: {}".format(w).ljust(40)
+            self.results_dict_summary[k] = sum
+        return 
+
     def print_results_as_text(self):
         print "\nRESULTS OF TESTS BY MINION ID:\n "
         for k,v in self.results_dict.items(): # get minion, and set of tests
             print "Minion id: {}".format(k)
+            print "Summary: Passed: {}, Failed: {}".format(self.results_dict_summary[k].get('pass', 0), self.results_dict_summary[k].get('fail', 0) )
             for l,w in self.results_dict[k].items(): # print test and result
                 print "Test: {}".format(l).ljust(40),
                 if w != True:
@@ -118,6 +137,12 @@ class Tester(object):
                     print "Result: {}".format(w).ljust(40)
                 #print "Test: {}                           Result: {}".format(l,w)
             print
+
+    def print_results_as_text_summary(self):
+        print "\nRESULTS OF TESTS BY MINION ID:\n "
+        for k,v in self.results_dict.items(): # get minion, and set of tests
+            print "Minion id: {}".format(k)
+            print "Summary: Passed: {}, Failed: {}".format(self.results_dict_summary[k].get('pass', 0), self.results_dict_summary[k].get('fail', 0) )
 
     # broken
     def print_results_as_yaml(self):
@@ -191,6 +216,7 @@ def main(minion_list, test_dict):
                 res[test_name] = v
                 t.results_dict[k] = res 
             #print "{}         {}".format(k, v)
+    t.summarize_results()
     t.print_results_as_text()
     print 
 
@@ -198,6 +224,7 @@ def main(minion_list, test_dict):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument('-L', '--list', action="store", dest="L")
+    parser.add_argument('-v', '--verbose', action="store", dest="v")
     parser.add_argument('testfile', action="store")
     args = parser.parse_args()
     #print "list: {}".format(args.L)
