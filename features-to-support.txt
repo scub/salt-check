@@ -25,8 +25,6 @@ Ability to save run output to a named file
 Ability to test multiple tests via command line file
 Ability to walk an entire file tree (given a dir to start in) and run all tests
 
-Beautifully useful output in terms of what test was run on what agent with result where failing tests show the reason the test failed
-
 Input files are yaml, using the parameters of any given salt module
 
 Example tests for commonly used scenarios e.g.:
@@ -34,8 +32,8 @@ package installed
 service running
 file contents or contains, permissions and etc
 process listening on a particular port
-how to test an apache install
-how to test a php install + library install
+Specific useful example tests to provide:  apache, php + ini files and libraries
+
 
 Consider running tests as groups for an increase in speed
 
@@ -43,12 +41,12 @@ Consider adding an optional timeout flag to increase timeout thresholds
 
 Once code is feature complete it will be converted to a pip intallable format and pep8 syntax formatted
 
-Output should be flexible by cli option
-- typical output for unit tests (passed: X, failed: Y)  group by passed and failed
-- output to json
-- output to yaml
+Order test output alphabetically for predictable output
+e.g   test-a, test-b, test-c  
 
-
+Default output: text & terse (total pass/fail and output of failed tests)
+Optional outputs:  yaml, jinja
+Optional verbosity: verbose (all data)
 
 
 
