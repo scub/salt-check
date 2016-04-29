@@ -1,0 +1,40 @@
+Next items to do:
+-----------------
+- unit tests
+- package for pip installs
+- add more assertions
+- order test output alphabetically for predictable output
+- support walking a file dir recursively to pick up all tests to run
+- support ssh as a testing transport
+- pass in pillar dictionary 
+- create example tests for others to use as templates (apache, php, mysql)
+
+
+Assertions to support:
+assertEqual
+assertNotEqual
+assertTrue
+assertFalse
+assertIsNone
+assertIsNotNone
+assertIn
+assertNotIn
+assertGreater
+assertGreaterEqual
+assertLess
+assertLessEqual
+assertItemsEqual
+assertDictContainsSubset
+
+
+Future features:
+----------------
+Create a dynamic test assembler based on what states are assembled for a minion in highstate compilation
+Ability to save run output to a named file
+Ability to test multiple tests via command line file
+Add an optional timeout flag to increase timeout thresholds for set of tests
+Consider running tests as groups for an increase in speed
+
+
+
+
