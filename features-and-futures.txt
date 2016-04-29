@@ -1,6 +1,7 @@
 Next items to do:
 -----------------
 - unit tests
+- document how this software should be used, and how it works
 - package for pip installs
 - add more assertions
 - order test output alphabetically for predictable output
