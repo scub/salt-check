@@ -75,7 +75,8 @@ class Tester(object):
             value = False
         return value
 
-    def assert_equal(self, expected, returned):
+    @staticmethod
+    def assert_equal(expected, returned):
         '''
         Test if two objects are equal
         '''
@@ -86,7 +87,8 @@ class Tester(object):
             result = [False, err]
         return result
 
-    def assert_not_equal(self, expected, returned):
+    @staticmethod
+    def assert_not_equal(expected, returned):
         '''
         Test if two objects are not equal
         '''
@@ -97,7 +99,8 @@ class Tester(object):
             result = [False, err]
         return result
 
-    def assert_true(self, returned):
+    @staticmethod
+    def assert_true(returned):
         '''
         Test if an boolean is True
         '''
@@ -109,7 +112,8 @@ class Tester(object):
             result = [False, err]
         return result
 
-    def assert_false(self, returned):
+    @staticmethod
+    def assert_false(returned):
         '''
         Test if an boolean is False
         '''
@@ -224,7 +228,8 @@ class TestLoader(object):
                 is_valid = False
         return is_valid
 
-    def check_test_is_valid(self, test):
+    @staticmethod
+    def check_test_is_valid(test):
         '''
         checks that a test is valid
         '''
