@@ -8,6 +8,9 @@ import salt.config
 import argparse
 
 class Tester(object):
+    '''
+    This class implements the salt_check
+    '''
 
     def __init__(self):
         self.salt_lc = salt.client.LocalClient()
@@ -15,53 +18,52 @@ class Tester(object):
         self.results_dict_summary = {}
 
     def run_one_test(self, minion_list, test_dict):
-        #print "\n\ntest_dict contains: {}\n\n".format(test_dict)
+        '''
+        Run one salt_check test, return results
+        '''
         results_dict = {}
         test_name = test_dict.keys()[0]
-        #test_name = test_dict.keys()
-        #print "\n\ntest_name: {}".format(test_name)
         m_f = test_dict[test_name].get('module_and_function', None)
-        #print "module_and_function: {}".format(m_f)
         t_args = test_dict[test_name].get('args', None)
-        #if not t_args[0] == "'"  and not t_args[-1] == "'":
-        if type(t_args) != list:
+        if not isinstance(t_args, list):
             t_args = t_args.split()
-        #t_args = [t_args]
-        #print "args: {}".format(t_args)
         t_kwargs = test_dict[test_name].get('kwargs', None)
-        #print "kwargs: {}".format(t_kwargs)
-        pillar_data = test_dict[test_name].get('pillar-data', None)
-        #print "pillar_data: {}".format(pillar_data)
+        #pillar_data = test_dict[test_name].get('pillar-data', None)
         assertion = test_dict[test_name].get('assertion', None)
-        #print "assertion: {}".format(assertion)
         expected_return = test_dict[test_name].get('expected-return', None)
-        #print "expected_return: {}".format(expected_return)
-        val = self.call_salt_command(tgt=minion_list,
-                                     fun=m_f,
-                                     arg=t_args,
-                                     kwarg=t_kwargs,
-                                     expr_form='list')
-        for k, v in val.items():
+        values = self.call_salt_command(tgt=minion_list,
+                                        fun=m_f,
+                                        arg=t_args,
+                                        kwarg=t_kwargs,
+                                        expr_form='list')
+        for key, val in values.items():
             if assertion == "assertEqual":
-                value = self.assertEqual(expected_return, v)
-                results_dict[k] = value
+                value = self.assert_equal(expected_return, val)
+                results_dict[key] = value
             elif assertion == "assertNotEqual":
-                value = self.assertNotEqual(expected_return, v)
-                results_dict[k] = value
+                value = self.assert_not_equal(expected_return, val)
+                results_dict[key] = value
             elif assertion == "assertTrue":
-                value = self.assertTrue(expected_return, v)
-                results_dict[k] = value
+                value = self.assert_true(val)
+                results_dict[key] = value
             elif assertion == "assertFalse":
-                value = self.assertFalse(expected_return, v)
-                results_dict[k] = value
+                value = self.assert_false(val)
+                results_dict[key] = value
             else:
                 value = "???"
         return [test_name, results_dict]
 
 
-    def call_salt_command(self, tgt, fun, arg=(), timeout=None,
-                          expr_form='compound', ret='', jid='',
-                          kwarg=None, **kwargs):
+    def call_salt_command(self,
+                          tgt,
+                          fun,
+                          arg=(),
+                          timeout=None,
+                          expr_form='compound',
+                          ret='',
+                          jid='',
+                          kwarg=None,
+                          **kwargs):
         '''Generic call of salt command'''
         value = True
         try:
@@ -73,7 +75,10 @@ class Tester(object):
             value = False
         return value
 
-    def assertEqual(self, expected, returned):
+    def assert_equal(self, expected, returned):
+        '''
+        Test if two objects are equal
+        '''
         result = True
         try:
             assert (expected == returned), "{} is not equal to {}".format(expected, returned)
@@ -81,7 +86,10 @@ class Tester(object):
             result = [False, err]
         return result
 
-    def assertNotEqual(self, expected, returned):
+    def assert_not_equal(self, expected, returned):
+        '''
+        Test if two objects are not equal
+        '''
         result = True
         try:
             assert (expected != returned), "{} is equal to {}".format(expected, returned)
@@ -89,7 +97,10 @@ class Tester(object):
             result = [False, err]
         return result
 
-    def assertTrue(self, expected, returned):
+    def assert_true(self, returned):
+        '''
+        Test if an boolean is True
+        '''
         # may need to cast returned to string
         result = True
         try:
@@ -98,7 +109,10 @@ class Tester(object):
             result = [False, err]
         return result
 
-    def assertFalse(self, expected, returned):
+    def assert_false(self, returned):
+        '''
+        Test if an boolean is False
+        '''
         # may need to cast returned to string
         result = True
         try:
@@ -249,6 +263,6 @@ if __name__ == "__main__":
     mydict = t.get_test_as_dict()
     #print "mydict contains: {}".format(mydict)
     minion_list_str = args.L
-    minion_list = minion_list_str.split(",")
+    my_minion_list = minion_list_str.split(",")
     #print "minion_list: {}".format(minion_list)
-    main(minion_list=minion_list, test_dict=mydict, verbose=args.verbose)
+    main(minion_list=my_minion_list, test_dict=mydict, verbose=args.verbose)
