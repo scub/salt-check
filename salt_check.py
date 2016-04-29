@@ -69,7 +69,7 @@ class Tester(object):
         try:
             value = self.salt_lc.cmd(tgt, fun, arg, timeout,
                                      expr_form, ret, jid, kwarg, **kwargs)
-            #print "value = {}".format(value)
+            #print "value = {0}".format(value)
         except Exception, error:
             print error
             value = False
@@ -81,7 +81,7 @@ class Tester(object):
         '''
         result = True
         try:
-            assert (expected == returned), "{} is not equal to {}".format(expected, returned)
+            assert (expected == returned), "{0} is not equal to {1}".format(expected, returned)
         except AssertionError as err:
             result = [False, err]
         return result
@@ -92,7 +92,7 @@ class Tester(object):
         '''
         result = True
         try:
-            assert (expected != returned), "{} is equal to {}".format(expected, returned)
+            assert (expected != returned), "{0} is equal to {1}".format(expected, returned)
         except AssertionError as err:
             result = [False, err]
         return result
@@ -104,7 +104,7 @@ class Tester(object):
         # may need to cast returned to string
         result = True
         try:
-            assert (returned is True), "{} not True".format(returned)
+            assert (returned is True), "{0} not True".format(returned)
         except AssertionError as err:
             result = [False, err]
         return result
@@ -116,7 +116,7 @@ class Tester(object):
         # may need to cast returned to string
         result = True
         try:
-            assert (returned is False), "{} not False".format(returned)
+            assert (returned is False), "{0} not False".format(returned)
         except AssertionError as err:
             result = [False, err]
         return result
@@ -128,16 +128,16 @@ class Tester(object):
         count of tests to each minion
         '''
         for key in self.results_dict.keys(): # get minion, and set of tests
-            #print "Minion id: {}".format(key)
+            #print "Minion id: {0}".format(key)
             summary = {'pass':0, 'fail':0}
             for ley, wal in self.results_dict[key].items(): # print test and result
-                #print "Test: {}".format(ley).ljust(40),
+                #print "Test: {0}".format(ley).ljust(40),
                 if wal != True:
                     summary['fail'] = summary.get('fail', 0) + 1
-                    #print "Result: False --> {}".format(wal[1]).ljust(40)
+                    #print "Result: False --> {0}".format(wal[1]).ljust(40)
                 else:
                     summary['pass'] = summary.get('pass', 0) + 1
-                    #print "Result: {}".format(wal).ljust(40)
+                    #print "Result: {0}".format(wal).ljust(40)
             self.results_dict_summary[key] = summary
         return
 
@@ -147,17 +147,17 @@ class Tester(object):
         '''
         print "\nRESULTS OF TESTS BY MINION ID:\n "
         for key in self.results_dict.keys(): # get minion, and set of tests
-            print "Minion id: {}".format(key)
-            print "Summary: Passed: {}, Failed: {}".format(
+            print "Minion id: {0}".format(key)
+            print "Summary: Passed: {0}, Failed: {1}".format(
                 self.results_dict_summary[key].get('pass', 0),
                 self.results_dict_summary[key].get('fail', 0))
             for ley, wal in self.results_dict[key].items(): # print test and result
-                print "Test: {}".format(ley).ljust(40),
+                print "Test: {0}".format(ley).ljust(40),
                 if wal != True:
-                    print "Result: False --> {}".format(wal[1]).ljust(40)
+                    print "Result: False --> {0}".format(wal[1]).ljust(40)
                 else:
-                    print "Result: {}".format(wal).ljust(40)
-                #print "Test: {}                           Result: {}".format(l,w)
+                    print "Result: {0}".format(wal).ljust(40)
+                #print "Test: {0}                           Result: {1}".format(l,w)
             print
 
     def print_results_verbose_low(self):
@@ -166,14 +166,14 @@ class Tester(object):
         '''
         print "\nRESULTS OF TESTS BY MINION ID:\n "
         for key in self.results_dict.keys(): # get minion, and set of tests
-            print "\nMinion id: {}".format(key)
-            print "Summary: Passed: {}, Failed: {}".format(
+            print "\nMinion id: {0}".format(key)
+            print "Summary: Passed: {0}, Failed: {1}".format(
                 self.results_dict_summary[key].get('pass', 0),
                 self.results_dict_summary[key].get('fail', 0))
             for ley, wal in self.results_dict[key].items(): # print test and result
                 if wal != True:
-                    print "Test: {}".format(ley).ljust(40),
-                    print "Result: False --> {}".format(wal[1]).ljust(40)
+                    print "Test: {0}".format(ley).ljust(40),
+                    print "Result: False --> {0}".format(wal[1]).ljust(40)
 
     # broken
     def print_results_as_yaml(self):
@@ -208,7 +208,7 @@ class TestLoader(object):
         try:
             myfile = open(self.filepath, 'r')
             self.contents_yaml = yaml.load(myfile)
-            #print "YAML as dict:  {}".format( self.contents_yaml)
+            #print "YAML as dict:  {0}".format( self.contents_yaml)
         except:
             raise
         return
@@ -261,7 +261,7 @@ def main(minion_list, test_dict, verbose):
         result = tester.run_one_test(minion_list, {key:val})
         test_name = result[0]
         k_v = result[1]
-        #print "\nTest Name:  {}".format(test_name)
+        #print "\nTest Name:  {0}".format(test_name)
         #print "Minion      Test-Result"
         for ley, wal in k_v.items():
             res = tester.results_dict.get(ley, None)
@@ -270,7 +270,7 @@ def main(minion_list, test_dict, verbose):
             else:
                 res[test_name] = wal
                 tester.results_dict[ley] = res
-            #print "{}         {}".format(k, v)
+            #print "{0}         {1}".format(k, v)
     tester.summarize_results()
     if verbose == 'low':
         tester.print_results_verbose_low()
@@ -285,14 +285,14 @@ if __name__ == "__main__":
     PARSER.add_argument('testfile', action="store")
     PARSER.add_argument('-v', '--verbose', action="store", dest="verbose", default='low')
     ARGS = PARSER.parse_args()
-    #print "list: {}".format(args.L)
-    #print "verbose: {}".format(args.verbose)
-    #print "testfile: {}".format(args.testfile)
+    #print "list: {0}".format(args.L)
+    #print "verbose: {0}".format(args.verbose)
+    #print "testfile: {0}".format(args.testfile)
 
     TESTER = TestLoader(ARGS.testfile)
     MYDICT = TESTER.get_test_as_dict()
-    #print "mydict contains: {}".format(MYDICT)
+    #print "mydict contains: {0}".format(MYDICT)
     MINION_LIST_STR = ARGS.L
     MY_MINION_LIST = MINION_LIST_STR.split(",")
-    #print "minion_list: {}".format(minion_list)
+    #print "minion_list: {0}".format(minion_list)
     main(minion_list=MY_MINION_LIST, test_dict=MYDICT, verbose=ARGS.verbose)
