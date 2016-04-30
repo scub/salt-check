@@ -35,6 +35,7 @@ Ability to save run output to a named file
 Ability to test multiple tests via command line file
 Add an optional timeout flag to increase timeout thresholds for set of tests
 Consider running tests as groups for an increase in speed
+Document and add example of how to limit tests to read-only actions
 
 
 
