@@ -46,4 +46,8 @@ Requirements:
   * control can either be over ssh or the salt master event bus (e.g. zeromq)
 
 Installation:
-  pip install salt_check
+  pip install --upgrade salt_check-2016-5-1.1.tar.gz 
+  
+Uninstall:
+  pip uninstall salt_check
+
