@@ -297,7 +297,11 @@ if __name__ == "__main__":
     TESTER = TestLoader(ARGS.testfile)
     MYDICT = TESTER.get_test_as_dict()
     #print "mydict contains: {0}".format(MYDICT)
-    MINION_LIST_STR = ARGS.L
-    MY_MINION_LIST = MINION_LIST_STR.split(",")
-    #print "minion_list: {0}".format(minion_list)
-    main(minion_list=MY_MINION_LIST, test_dict=MYDICT, verbose=ARGS.verbose)
+    if ARGS.L:
+        MINION_LIST_STR = ARGS.L
+        MY_MINION_LIST = MINION_LIST_STR.split(",")
+        #print "minion_list: {0}".format(minion_list)
+        main(minion_list=MY_MINION_LIST, test_dict=MYDICT, verbose=ARGS.verbose)
+    else:
+        print "A list of minions to target must be provided"
+        print "e.g.  salt_check.py testfile.tst -L web,cnc"
