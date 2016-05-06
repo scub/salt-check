@@ -26,17 +26,30 @@ class Tester(object):
         test_name = test_dict.keys()[0]
         m_f = test_dict[test_name].get('module_and_function', None)
         t_args = test_dict[test_name].get('args', None)
-        if not isinstance(t_args, list):
+        if not t_args:
+            t_args = []
+        elif not isinstance(t_args, list):
+            # e.g. args: x y z --> convert to ['x','y','z']
             t_args = t_args.split()
         t_kwargs = test_dict[test_name].get('kwargs', None)
-        #pillar_data = test_dict[test_name].get('pillar-data', None)
+        pillar_data = test_dict[test_name].get('pillar-data', None)
+        if pillar_data:
+            if not t_kwargs:
+                t_kwargs = {}
+            t_kwargs['pillar'] = pillar_data
         assertion = test_dict[test_name].get('assertion', None)
         expected_return = test_dict[test_name].get('expected-return', None)
+        print "\ntest name: {}".format(test_name)
+        print "module and function: {}".format(m_f)
+        print "args: {}".format(t_args)
+        print "kwargs---> {}".format(t_kwargs)
+        print "pillar---> {}".format(pillar_data)
         values = self.call_salt_command(tgt=minion_list,
                                         fun=m_f,
                                         arg=t_args,
                                         kwarg=t_kwargs,
                                         expr_form='list')
+        print "returned from client: {}".format(values)
         for key, val in values.items():
             if assertion == "assertEqual":
                 value = self.assert_equal(expected_return, val)
