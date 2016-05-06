@@ -4,7 +4,7 @@ Next items to do:
 - document how this software should be used, and how it works
 - package for pip installs
 - add more assertions
-- support walking a file dir recursively to pick up all tests to run
+- support walking a file dir recursively to pick up all tests to run --> should keep tests results organized by file name for easy understanding of what happened.....e.g.  apache.tst versus mysql.tst --> outputs are given with a header of file they came from
 - support ssh as a testing transport
 - create example tests for others to use as templates (apache, php, mysql)
 
