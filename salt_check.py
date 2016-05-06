@@ -6,6 +6,7 @@ import json
 import salt.client
 import salt.config
 import yaml
+import collections
 
 class Tester(object):
     '''
@@ -155,7 +156,8 @@ class Tester(object):
             print "Summary: Passed: {0}, Failed: {1}".format(
                 self.results_dict_summary[key].get('pass', 0),
                 self.results_dict_summary[key].get('fail', 0))
-            for ley, wal in self.results_dict[key].items(): # print test and result
+            #for ley, wal in self.results_dict[key].items(): # print test and result
+            for ley, wal in sorted(self.results_dict[key].items()): # print test and result
                 print "Test: {0}".format(ley).ljust(40),
                 if wal != True:
                     print "Result: False --> {0}".format(wal[1]).ljust(40)
@@ -174,7 +176,8 @@ class Tester(object):
             print "Summary: Passed: {0}, Failed: {1}".format(
                 self.results_dict_summary[key].get('pass', 0),
                 self.results_dict_summary[key].get('fail', 0))
-            for ley, wal in self.results_dict[key].items(): # print test and result
+            sorted(self.results_dict[key])
+            for ley, wal in sorted(self.results_dict[key].items()): # print test and result
                 if wal != True:
                     print "Test: {0}".format(ley).ljust(40),
                     print "Result: False --> {0}".format(wal[1]).ljust(40)
