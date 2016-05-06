@@ -13,8 +13,11 @@ class Tester(object):
     This class implements the salt_check
     '''
 
-    def __init__(self):
-        self.salt_lc = salt.client.LocalClient()
+    def __init__(self, client='salt'):
+        if client == 'ssh':
+            self.salt_lc = salt.client.ssh.client.SSHClient()
+        else:
+            self.salt_lc = salt.client.LocalClient()
         self.results_dict = {}
         self.results_dict_summary = {}
 
@@ -272,11 +275,17 @@ class TestLoader(object):
         return self.contents_yaml
 
 
-def main(minion_list, test_dict, verbose):
+def main(minion_list, client_type, test_dict, verbose):
     '''
     main entry point
     '''
-    tester = Tester()
+    print "minion_list: {}".format(minion_list)
+    print "client_type: {}".format(client_type)
+    print "test_dict: {}".format(test_dict)
+    print "verbosity: {}".format(verbose)
+    print
+
+    tester = Tester(client=client_type)
     tester.results_dict = {} # for holding results of all tests
     for key, val in test_dict.items():
         result = tester.run_one_test(minion_list, {key:val})
@@ -303,6 +312,7 @@ def main(minion_list, test_dict, verbose):
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(add_help=True)
     PARSER.add_argument('-L', '--list', action="store", dest="L")
+    PARSER.add_argument('-c', '--client', action="store", dest="c", default='salt')
     PARSER.add_argument('testfile', action="store")
     PARSER.add_argument('-v', '--verbose', action="store", dest="verbose", default='low')
     ARGS = PARSER.parse_args()
@@ -317,7 +327,7 @@ if __name__ == "__main__":
         MINION_LIST_STR = ARGS.L
         MY_MINION_LIST = MINION_LIST_STR.split(",")
         #print "minion_list: {0}".format(minion_list)
-        main(minion_list=MY_MINION_LIST, test_dict=MYDICT, verbose=ARGS.verbose)
+        main(minion_list=MY_MINION_LIST, client_type=ARGS.c, test_dict=MYDICT, verbose=ARGS.verbose)
     else:
         print "A list of minions to target must be provided"
         print "e.g.  salt_check.py testfile.tst -L web,cnc"
