@@ -4,6 +4,7 @@
 import argparse
 import json
 import salt.client
+import salt.client.ssh.client
 import salt.config
 import yaml
 import collections
@@ -16,8 +17,10 @@ class Tester(object):
     def __init__(self, client='salt'):
         if client == 'ssh':
             self.salt_lc = salt.client.ssh.client.SSHClient()
+            self.transport = 'ssh'
         else:
             self.salt_lc = salt.client.LocalClient()
+            self.transport = 'salt'
         self.results_dict = {}
         self.results_dict_summary = {}
 
@@ -42,17 +45,17 @@ class Tester(object):
             t_kwargs['pillar'] = pillar_data
         assertion = test_dict[test_name].get('assertion', None)
         expected_return = test_dict[test_name].get('expected-return', None)
-        print "\ntest name: {}".format(test_name)
-        print "module and function: {}".format(m_f)
-        print "args: {}".format(t_args)
-        print "kwargs---> {}".format(t_kwargs)
-        print "pillar---> {}".format(pillar_data)
+        #print "\ntest name: {}".format(test_name)
+        #print "module and function: {}".format(m_f)
+        #print "args: {}".format(t_args)
+        #print "kwargs---> {}".format(t_kwargs)
+        #print "pillar---> {}".format(pillar_data)
         values = self.call_salt_command(tgt=minion_list,
                                         fun=m_f,
                                         arg=t_args,
                                         kwarg=t_kwargs,
                                         expr_form='list')
-        print "returned from client: {}".format(values)
+        #print "returned from client: {}".format(values)
         for key, val in values.items():
             if assertion == "assertEqual":
                 value = self.assert_equal(expected_return, val)
@@ -84,8 +87,13 @@ class Tester(object):
         '''Generic call of salt command'''
         value = True
         try:
-            value = self.salt_lc.cmd(tgt, fun, arg, timeout,
+            if self.transport == 'salt':
+                value = self.salt_lc.cmd(tgt, fun, arg, timeout,
                                      expr_form, ret, jid, kwarg, **kwargs)
+            else:
+                value = self.salt_lc.cmd(tgt, fun, arg, timeout,
+                                     expr_form, kwarg, **kwargs)
+             
             #print "value = {0}".format(value)
         except Exception, error:
             print error
