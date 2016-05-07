@@ -69,6 +69,24 @@ class Tester(object):
             elif assertion == "assertFalse":
                 value = self.assert_false(val)
                 results_dict[key] = value
+            elif assertion == "assertIn":
+                value = self.assert_in(expected_return, val)
+                results_dict[key] = value
+            elif assertion == "assertNotIn":
+                value = self.assert_not_in(expected_return, val)
+                results_dict[key] = value
+            elif assertion == "assertGreater":
+                value = self.assert_greater(expected_return, val)
+                results_dict[key] = value
+            elif assertion == "assertGreaterEqual":
+                value = self.assert_greater_equal(expected_return, val)
+                results_dict[key] = value
+            elif assertion == "assertLess":
+                value = self.assert_less(expected_return, val)
+                results_dict[key] = value
+            elif assertion == "assertLessEqual":
+                value = self.assert_less_equal(expected_return, val)
+                results_dict[key] = value
             else:
                 value = "???"
         return [test_name, results_dict]
@@ -146,6 +164,78 @@ class Tester(object):
         result = True
         try:
             assert (returned is False), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_in(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = True
+        try:
+            assert (expected in returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_not_in(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = True
+        try:
+            assert (expected not in returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_greater(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = True
+        try:
+            assert (expected > returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_greater_equal(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = True
+        try:
+            assert (expected >= returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_less(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = True
+        try:
+            assert (expected < returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_less_equal(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = True
+        try:
+            assert (expected <= returned), "{0} not False".format(returned)
         except AssertionError as err:
             result = [False, err]
         return result
