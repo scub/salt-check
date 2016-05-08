@@ -7,6 +7,7 @@ import salt.client
 import salt.client.ssh.client
 import salt.config
 import yaml
+import time
 import collections
 
 class Tester(object):
@@ -377,6 +378,7 @@ def main(minion_list, client_type, test_dict, verbose):
     '''
     main entry point
     '''
+    start_time = time.time()
     print "minion_list: {}".format(minion_list)
     print "client_type: {}".format(client_type)
     print "test_dict: {}".format(test_dict)
@@ -405,6 +407,9 @@ def main(minion_list, client_type, test_dict, verbose):
     else:
         tester.print_results_as_text()
     print
+    end_time = time.time()
+    total_time_sec = end_time - start_time
+    print "Time to run tests: {} seconds".format(round(total_time_sec, 2))
 
 
 if __name__ == "__main__":
