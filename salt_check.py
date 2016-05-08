@@ -9,6 +9,8 @@ import salt.config
 import yaml
 import time
 import collections
+import os
+import os.path
 
 class Tester(object):
     '''
@@ -319,29 +321,72 @@ class TestLoader(object):
     Class loads in test files
     '''
 
-    def __init__(self, filename):
-        self.filepath = filename
-        self.contents_yaml = None
+    def __init__(self, file_or_dir):
+        self.filepath = file_or_dir
+        self.path_type = None
+        self.test_files = [] # list of file paths
+        self.test_dict = {}
 
-    def load_file(self):
+    def is_file_or_dir(self):
+        '''determine if the pathname is a file or dir'''
+        if os.path.isdir(self.filepath):
+            self.path_type = 'dir'
+            #print "self.path_type: {0}".format(self.path_type)
+        elif os.path.isfile(self.filepath):
+            self.path_type = 'file'
+            #print "self.path_type: {0}".format(self.path_type)
+        else:
+            self.path_type = "Unsupported path type"
+            #print "self.path_type: {0}".format(self.path_type)
+
+    def load_test_suite(self, path_type):
+        '''load tests either from one file, or a set of files'''
+        if self.path_type == 'file':
+            self.load_file(self.filepath)
+        elif self.path_type == 'dir':
+            self.gather_files()
+            for f in self.test_files:
+                self.load_file(f)
+
+    def gather_files(self ):
+        rootDir = self.filepath
+        for dirName, subdirList, fileList in os.walk(rootDir):
+            #print('Found directory: %s' % dirName)
+            for fname in fileList:
+                #print('\t%s' % fname)
+                if fname.endswith('.tst'):
+                    start_path = dirName + os.sep + fname
+                    #print "start_path: {0}".format(start_path)
+                    full_path = os.path.abspath(start_path) 
+                    #print "full_path: {0}".format(full_path)
+                    self.test_files.append(full_path)
+                
+    def load_file(self, filepath):
         '''
         loads in one test file
         '''
         try:
-            myfile = open(self.filepath, 'r')
-            self.contents_yaml = yaml.load(myfile)
-            #print "YAML as dict:  {0}".format( self.contents_yaml)
+            myfile = open(filepath, 'r')
+            contents_yaml = yaml.load(myfile)
+            #print "contents_yaml: {0}".format(contents_yaml)
+            #if self.check_file_is_valid(contents_yaml):
+            #    for k, v in contents_yaml.items():
+            #        self.test_dict[k] = v
+            for k, v in contents_yaml.items():
+                self.test_dict[k] = v
         except:
             raise
         return
 
-    def check_file_is_valid(self):
+    def check_file_is_valid(self, test_dictionary):
         '''
         ensure file is valid
         '''
         is_valid = True
-        for k in self.contents_yaml.keys():
-            is_ok = self.check_test_is_valid(self.contents_yaml[k])
+        if test_dictionary == None or len(test_dictionary.keys()) == 0:
+            return False
+        for k in test_dictionary.keys():
+            is_ok = self.check_test_is_valid(test_dictionary[k])
             if not is_ok:
                 is_valid = False
         return is_valid
@@ -349,7 +394,7 @@ class TestLoader(object):
     @staticmethod
     def check_test_is_valid(test):
         '''
-        checks that a test is valid
+        checks that all tests in a file are valid
         '''
         # check each test from file ensuring miniumum necessary params are met, no value check
         # must have module_and_function, assertion, expected-return
@@ -362,16 +407,14 @@ class TestLoader(object):
             is_valid = False
         return is_valid
 
+
     def get_test_as_dict(self):
         '''
-        retrieve a test as a dict
+        retrieve the tests as a dict
         '''
-        try:
-            self.load_file()
-            self.check_file_is_valid()
-        except:
-            raise
-        return self.contents_yaml
+        file_dir_type = self.is_file_or_dir()
+        self.load_test_suite(file_dir_type)
+        return self.test_dict
 
 
 def main(minion_list, client_type, test_dict, verbose):
@@ -379,10 +422,10 @@ def main(minion_list, client_type, test_dict, verbose):
     main entry point
     '''
     start_time = time.time()
-    print "minion_list: {}".format(minion_list)
-    print "client_type: {}".format(client_type)
-    print "test_dict: {}".format(test_dict)
-    print "verbosity: {}".format(verbose)
+    #print "minion_list: {}".format(minion_list)
+    #print "client_type: {}".format(client_type)
+    #print "test_dict: {}".format(test_dict)
+    #print "verbosity: {}".format(verbose)
     print
 
     tester = Tester(client=client_type)
