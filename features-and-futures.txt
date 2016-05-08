@@ -1,7 +1,6 @@
 Next items to do:
 -----------------
-- unit tests
-- support walking a file dir recursively to pick up all tests to run --> should keep tests results organized by file name for easy understanding of what happened.....e.g.  apache.tst versus mysql.tst --> outputs are given with a header of file they came from
+- unit tests for test loader
 - create example states and tests for the following: apache (pkg, file, service), mysql (pkg, file, service + global vars)
 
 Future desired features (by priority):
