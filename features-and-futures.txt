@@ -4,7 +4,7 @@ Next items to do:
 - support walking a file dir recursively to pick up all tests to run --> should keep tests results organized by file name for easy understanding of what happened.....e.g.  apache.tst versus mysql.tst --> outputs are given with a header of file they came from
 - create example tests for the following: apache, mysql
 
-Future features (by priority):
+Future possible features (by priority):
 ----------------
 Consider running tests as groups for an increase in speed - especially helpful for tests running over ssh
 Create a dynamic test assembler based on what states are assembled for a minion in highstate compilation
@@ -14,6 +14,10 @@ Different output formats: text, json, yaml
 Ability to test multiple tests via command line file
 Add an optional timeout flag to increase timeout thresholds for set of tests
 Document and add example of how to limit tests to read-only actions (same method as limited salt execution by user)
+Add ability run tests locally (e.g. over salt-call)
+Capture run time in seconds (for test suite to run)
+Create a sample state that will call salt_call with appropriate args - makes it easy to have checks run automatically after a state run
+Create testing modules which make the actual testing more concise from the viewpoint of yaml given (e.g. a test module that cross calls other modules already tested - should make it easy to see what did not match up)
 
 
 
