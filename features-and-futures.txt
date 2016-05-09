@@ -1,12 +1,14 @@
 Next items to do:
 -----------------
 - unit tests for test loader
-- create example states and tests for the following: apache (pkg, file, service), mysql (pkg, file, service + global vars)
+- create a sample state that will call salt_call with appropriate args - makes it easy to have checks run automatically after a state run
+- create example states and tests for the following: 
+  1.  apache (pkg, file, service)
+  2.  mysql (pkg, file, service + global vars)
 
 Future desired features (by priority):
 ----------------
 Consider running tests as groups for an increase in speed - especially helpful for tests running over ssh
-Create a sample state that will call salt_call with appropriate args - makes it easy to have checks run automatically after a state run
 Create a dynamic test assembler based on what states are assembled for a minion in highstate compilation
 Different output formats: text, json, yaml
 Support test file formats: yaml, json
