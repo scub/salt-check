@@ -73,12 +73,17 @@ class SaltCheck(object):
                           args,
                           kwargs):
         '''Generic call of salt Caller command'''
-        value = True
+        #value = True
         #try:
             #value = self.salt_lc.cmd(fun, args, kwargs)
             #value = self.salt_lc.function(fun, args, kwargs)
-            #value = self.salt_lc.sminion.function(fun, args, kwargs)
-        value = self.salt_lc.sminion.functions(fun, args, kwargs)
+        if kwargs:
+            value = self.salt_lc.function(fun, args, kwargs)
+        elif args:
+            value = self.salt_lc.function(fun, args)
+        else:
+            value = self.salt_lc.function(fun)
+        #value = self.salt_lc.sminion.functions(fun, args, kwargs)
         #except Exception as err:
         #    value = err
         return value
@@ -87,10 +92,12 @@ class SaltCheck(object):
         if is_valid_test(test_dict):
             mod_and_func = test_dict['module_and_function']
             args = test_dict.get('args', None)
+            #args = [args.split()]
             assertion = test_dict['assertion']
             expected_return = test_dict['expected-return']
             kwargs = test_dict.get('kwargs', None)
             actual_return =  self.call_salt_command(mod_and_func, args, kwargs)
+            #actual_return = False
             if assertion == "assertEqual":
                 value = self.assert_equal(expected_return, actual_return)
             elif assertion == "assertNotEqual":
@@ -113,8 +120,8 @@ class SaltCheck(object):
                 value = self.assert_less_equal(expected_return, actual_return)
             else:
                 value = (False, None)
-        #return value
-        return actual_return
+        return value
+        #return [mod_and_func, args, kwargs]
 
 
     @staticmethod
