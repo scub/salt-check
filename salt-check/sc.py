@@ -70,47 +70,51 @@ class SaltCheck(object):
 
     def call_salt_command(self,
                           fun,
-                          args=(),
-                          **kwargs):
+                          args,
+                          kwargs):
         '''Generic call of salt Caller command'''
         value = True
-        try:
-            value = self.salt_lc.cmd(fun, args, **kwargs)
-        except Exception:
-            value = False
+        #try:
+            #value = self.salt_lc.cmd(fun, args, kwargs)
+            #value = self.salt_lc.function(fun, args, kwargs)
+            #value = self.salt_lc.sminion.function(fun, args, kwargs)
+        value = self.salt_lc.sminion.functions(fun, args, kwargs)
+        #except Exception as err:
+        #    value = err
         return value
 
     def run_test(self, test_dict):
         if is_valid_test(test_dict):
             mod_and_func = test_dict['module_and_function']
-            args = test_dict['args']
+            args = test_dict.get('args', None)
             assertion = test_dict['assertion']
             expected_return = test_dict['expected-return']
             kwargs = test_dict.get('kwargs', None)
             actual_return =  self.call_salt_command(mod_and_func, args, kwargs)
             if assertion == "assertEqual":
-                value = self.assert_equal(expected_return, expected_return)
+                value = self.assert_equal(expected_return, actual_return)
             elif assertion == "assertNotEqual":
-                value = self.assert_not_equal(expected_return, expected_return)
+                value = self.assert_not_equal(expected_return, actual_return)
             elif assertion == "assertTrue":
                 value = self.assert_true(expected_return)
             elif assertion == "assertFalse":
                 value = self.assert_false(expected_return)
             elif assertion == "assertIn":
-                value = self.assert_in(expected_return, expected_return)
+                value = self.assert_in(expected_return, actual_return)
             elif assertion == "assertNotIn":
-                value = self.assert_not_in(expected_return, expected_return)
+                value = self.assert_not_in(expected_return, actual_return)
             elif assertion == "assertGreater":
-                value = self.assert_greater(expected_return, expected_return)
+                value = self.assert_greater(expected_return, actual_return)
             elif assertion == "assertGreaterEqual":
-                value = self.assert_greater_equal(expected_return, expected_return)
+                value = self.assert_greater_equal(expected_return, actual_return)
             elif assertion == "assertLess":
-                value = self.assert_less(expected_return, expected_return)
+                value = self.assert_less(expected_return, actual_return)
             elif assertion == "assertLessEqual":
-                value = self.assert_less_equal(expected_return, expected_return)
+                value = self.assert_less_equal(expected_return, actual_return)
             else:
                 value = (False, None)
-        return value
+        #return value
+        return actual_return
 
 
     @staticmethod
@@ -118,7 +122,7 @@ class SaltCheck(object):
         '''
         Test if two objects are equal
         '''
-        result = (True, None)
+        result = True
         try:
             assert (expected == returned), "{0} is not equal to {1}".format(expected, returned)
         except AssertionError as err:
@@ -253,6 +257,13 @@ def sync_salt_states():
     return sc.sync_salt_states()
 
 def run_test(test_dict):
+    '''
+    Enables running one salt_check test via cli
+    CLI Example::
+        salt '*' salt_check.run_test '{"module_and_function": "test.echo", "assertion": "assertEqual", "expected-return": "This works!", 'args':"This works!" }'
+    '''
+    # salt converts the string to a dictionary auto-magically
     sc = SaltCheck()
+    #return "type of object is {}".format(type(test_dict_str))
     return sc.run_test(test_dict)
-    
+    #return test_dict_str
