@@ -1,10 +1,14 @@
 #!/usr/bin/env python
-'''This custom salt module makes it easy to test salt states and highstates.
+'''This program allows for unit-test like testing of salt state logic
    Author: William Cannon  william period cannon at gmail dot com'''
+import argparse
 import json
 import salt.client
+import salt.client.ssh.client
 import salt.config
 import yaml
+import time
+import collections
 import os
 import os.path
 
@@ -13,8 +17,13 @@ class Tester(object):
     This class implements the salt_check
     '''
 
-    def __init__(self):
-        self.salt_lc = salt.client.Caller()
+    def __init__(self, client='salt'):
+        if client == 'ssh':
+            self.salt_lc = salt.client.ssh.client.SSHClient()
+            self.transport = 'ssh'
+        else:
+            self.salt_lc = salt.client.LocalClient()
+            self.transport = 'salt'
         self.results_dict = {}
         self.results_dict_summary = {}
 
@@ -87,6 +96,7 @@ class Tester(object):
 
 
     def call_salt_command(self,
+                          tgt,
                           fun,
                           arg=(),
                           timeout=None,
@@ -99,10 +109,10 @@ class Tester(object):
         value = True
         try:
             if self.transport == 'salt':
-                value = self.salt_lc.cmd(fun, arg, timeout,
+                value = self.salt_lc.cmd(tgt, fun, arg, timeout,
                                      expr_form, ret, jid, kwarg, **kwargs)
             else:
-                value = self.salt_lc.cmd(fun, arg, timeout,
+                value = self.salt_lc.cmd(tgt, fun, arg, timeout,
                                      expr_form, kwarg, **kwargs)
              
             #print "value = {0}".format(value)
@@ -289,6 +299,22 @@ class Tester(object):
                     print "Test: {0}".format(ley).ljust(40),
                     print "Result: False --> {0}".format(wal[1]).ljust(40)
 
+    # broken
+    def print_results_as_yaml(self):
+        '''
+        print results dict as yaml
+        '''
+        myyaml = yaml.dump(self.results_dict)
+        print myyaml
+
+    # broken - have to get rid of tuples in AssertionError output?
+    def print_results_as_json(self):
+        '''
+        print results dict as json
+        '''
+        myjson = json.dumps(self.results_dict)
+        print myjson
+
 
 class TestLoader(object):
     '''
@@ -427,3 +453,27 @@ def main(minion_list, client_type, test_dict, verbose):
     end_time = time.time()
     total_time_sec = end_time - start_time
     print "Time to run tests: {} seconds".format(round(total_time_sec, 2))
+
+
+if __name__ == "__main__":
+    PARSER = argparse.ArgumentParser(add_help=True)
+    PARSER.add_argument('-L', '--list', action="store", dest="L")
+    PARSER.add_argument('-c', '--client', action="store", dest="c", default='salt')
+    PARSER.add_argument('testfile', action="store")
+    PARSER.add_argument('-v', '--verbose', action="store", dest="verbose", default='low')
+    ARGS = PARSER.parse_args()
+    #print "list: {0}".format(args.L)
+    #print "verbose: {0}".format(args.verbose)
+    #print "testfile: {0}".format(args.testfile)
+
+    TESTER = TestLoader(ARGS.testfile)
+    MYDICT = TESTER.get_test_as_dict()
+    #print "mydict contains: {0}".format(MYDICT)
+    if ARGS.L:
+        MINION_LIST_STR = ARGS.L
+        MY_MINION_LIST = MINION_LIST_STR.split(",")
+        #print "minion_list: {0}".format(minion_list)
+        main(minion_list=MY_MINION_LIST, client_type=ARGS.c, test_dict=MYDICT, verbose=ARGS.verbose)
+    else:
+        print "A list of minions to target must be provided"
+        print "e.g.  salt_check.py testfile.tst -L web,cnc"
