@@ -19,7 +19,7 @@ class SaltCheck(object):
         self.salt_lc = salt.client.Caller(mopts=self.__opts__)
         self.results_dict = {}
         self.results_dict_summary = {}
-        self.assertions_list = "assertEqual assertNotEqual".split()
+        self.assertions_list = "assertEqual assertNotEqual assertTrue assertFalse assertIn assertGreater assertGreaterEqual assertLess assertLessEqual".split()
         self.modules = self.populate_salt_modules_list()
 
     def populate_salt_modules_list(self):
@@ -80,6 +80,161 @@ class SaltCheck(object):
             value = False
         return value
 
+    def run_test(self, test_dict):
+        if is_valid_test(test_dict):
+            mod_and_func = test_dict['module_and_function']
+            args = test_dict['args']
+            assertion = test_dict['assertion']
+            expected_return = test_dict['expected-return']
+            kwargs = test_dict.get('kwargs', None)
+            actual_return =  self.call_salt_command(mod_and_func, args, kwargs)
+            if assertion == "assertEqual":
+                value = self.assert_equal(expected_return, expected_return)
+            elif assertion == "assertNotEqual":
+                value = self.assert_not_equal(expected_return, expected_return)
+            elif assertion == "assertTrue":
+                value = self.assert_true(expected_return)
+            elif assertion == "assertFalse":
+                value = self.assert_false(expected_return)
+            elif assertion == "assertIn":
+                value = self.assert_in(expected_return, expected_return)
+            elif assertion == "assertNotIn":
+                value = self.assert_not_in(expected_return, expected_return)
+            elif assertion == "assertGreater":
+                value = self.assert_greater(expected_return, expected_return)
+            elif assertion == "assertGreaterEqual":
+                value = self.assert_greater_equal(expected_return, expected_return)
+            elif assertion == "assertLess":
+                value = self.assert_less(expected_return, expected_return)
+            elif assertion == "assertLessEqual":
+                value = self.assert_less_equal(expected_return, expected_return)
+            else:
+                value = (False, None)
+        return value
+
+
+    @staticmethod
+    def assert_equal(expected, returned):
+        '''
+        Test if two objects are equal
+        '''
+        result = (True, None)
+        try:
+            assert (expected == returned), "{0} is not equal to {1}".format(expected, returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_not_equal(expected, returned):
+        '''
+        Test if two objects are not equal
+        '''
+        result = (True, None)
+        try:
+            assert (expected != returned), "{0} is equal to {1}".format(expected, returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_true(returned):
+        '''
+        Test if an boolean is True
+        '''
+        # may need to cast returned to string
+        result = (True, None)
+        try:
+            assert (returned is True), "{0} not True".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_false(returned):
+        '''
+        Test if an boolean is False
+        '''
+        # may need to cast returned to string
+        result = (True, None)
+        try:
+            assert (returned is False), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_in(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = (True, None)
+        try:
+            assert (expected in returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_not_in(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = (True, None)
+        try:
+            assert (expected not in returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_greater(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = (True, None)
+        try:
+            assert (expected > returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_greater_equal(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = (True, None)
+        try:
+            assert (expected >= returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_less(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = (True, None)
+        try:
+            assert (expected < returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
+    @staticmethod
+    def assert_less_equal(expected, returned):
+        '''
+        Test if a value is in the list of returned values
+        '''
+        result = (True, None)
+        try:
+            assert (expected <= returned), "{0} not False".format(returned)
+        except AssertionError as err:
+            result = [False, err]
+        return result
+
 
 def is_valid_module(module_name):
     sc = SaltCheck()
@@ -96,3 +251,8 @@ def is_valid_test(test_dict):
 def sync_salt_states():
     sc = SaltCheck()
     return sc.sync_salt_states()
+
+def run_test(test_dict):
+    sc = SaltCheck()
+    return sc.run_test(test_dict)
+    
