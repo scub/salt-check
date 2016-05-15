@@ -26,6 +26,12 @@ class SaltCheck(object):
         valid_modules = __salt__['sys.list_modules']()
         return valid_modules
 
+    def sync_salt_states(self):
+        '''Sync the salt states in order to get the salt-check-tests
+           directory in a state folder from the master'''
+        __salt__['saltutil.sync_states']
+        return
+
     def is_valid_module(self, module_name):
         '''Determines if a module is valid on a minion'''
         if module_name not in self.modules: 
@@ -86,3 +92,7 @@ def is_valid_function(module_name, function):
 def is_valid_test(test_dict):
     sc = SaltCheck()
     return sc.is_valid_test(test_dict)
+
+def sync_salt_states():
+    sc = SaltCheck()
+    return sc.sync_salt_states()
