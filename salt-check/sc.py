@@ -2,6 +2,8 @@
 '''This custom salt module makes it easy to test salt states and highstates.
    Author: William Cannon  william period cannon at gmail dot com'''
 import os
+import ast
+import json
 import yaml
 import os.path
 import salt.client
@@ -67,6 +69,8 @@ class SaltCheck(object):
            tots += 1 
         return tots >= 6
 
+    #def is_valid_test(self, test_dict):
+        return True
 
     def call_salt_command(self,
                           fun,
@@ -84,6 +88,9 @@ class SaltCheck(object):
         except Exception as err:
             value = err
         return value
+  
+    #def run_test(self, test_dict):
+    #    return type(test_dict)
 
     def run_test(self, test_dict):
         if is_valid_test(test_dict):
@@ -245,6 +252,12 @@ class SaltCheck(object):
             result = "False: " + str(err)
         return result
 
+    def show_minion_options(self):
+        cachedir = self.__opts__['cachedir']
+        root_dir = self.__opts__['root_dir']
+        states_dirs = self.__opts__['states_dirs']
+        return cachedir, root_dir, states_dirs
+
 
 def is_valid_module(module_name):
     sc = SaltCheck()
@@ -262,14 +275,24 @@ def sync_salt_states():
     sc = SaltCheck()
     return sc.sync_salt_states()
 
-def run_test(test_dict):
+def show_minion_options():
+    sc = SaltCheck()
+    return sc.show_minion_options()
+
+def run_test(**kwargs):
     '''
     Enables running one salt_check test via cli
     CLI Example::
-        salt '*' salt_check.run_test '{"module_and_function": "test.echo", "assertion": "assertEqual", "expected-return": "This works!", 'args':"This works!" }'
+        salt '*' salt_check.run_test '{"module_and_function": "test.echo", "assertion": "assertEqual", "expected-return": "This works!", "args":"This works!" }'
     '''
     # salt converts the string to a dictionary auto-magically
     sc = SaltCheck()
-    #return "type of object is {}".format(type(test_dict_str))
-    return sc.run_test(test_dict)
+    test = kwargs.get('test', None)
+    #test = "'" + test + "'"
+    #return "type of object is {}".format(type(test))
+    #return "str given is {}".format(test)
+    if test and isinstance(test, dict):
+        return sc.run_test(test)
+    else:
+        return "test must be dictionary"
     #return test_dict_str
