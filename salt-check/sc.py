@@ -2,8 +2,6 @@
 '''This custom salt module makes it easy to test salt states and highstates.
    Author: William Cannon  william period cannon at gmail dot com'''
 import os
-import ast
-import json
 import yaml
 import os.path
 import salt.client
@@ -256,8 +254,15 @@ class SaltCheck(object):
         cachedir = self.__opts__['cachedir']
         root_dir = self.__opts__['root_dir']
         states_dirs = self.__opts__['states_dirs']
-        return cachedir, root_dir, states_dirs
+        environment = self.__opts__['environment']
+        return {'cachedir':cachedir, 'root_dir':root_dir, 'states_dirs':states_dirs, 'environment':environment}
+        #return self.__opts__
 
+    def show_state_search_path(self):
+        root_dir = self.__opts__.get('root_dir', None)
+        cachedir = self.__opts__.get('cachedir', None)
+        file_roots = self.__opts__.get('file_roots', None)
+        return root_dir, cachedir, file_roots
 
 def is_valid_module(module_name):
     sc = SaltCheck()
@@ -278,6 +283,11 @@ def sync_salt_states():
 def show_minion_options():
     sc = SaltCheck()
     return sc.show_minion_options()
+
+def show_state_search_path():
+    ''' Show the search paths used for states '''
+    sc = SaltCheck()
+    return sc.show_state_search_path()
 
 def run_test(**kwargs):
     '''
