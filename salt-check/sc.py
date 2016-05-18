@@ -289,7 +289,73 @@ class SaltCheck(object):
 
     def get_state_dir(self):
         paths = self.get_state_search_path_list()
+
+class TestLoader(object):
+    '''
+    Class loads in test files for a state
+    e.g.  state_dir/salt-check-tests/[1.tst, 2.tst, 3.tst]
+    '''
+
+    def __init__(self, search_paths):
+        self.search_paths = search_paths
+        self.path_type = None
+        self.test_files = [] # list of file paths
+        self.test_dict = {}
+
+    def is_file_or_dir(self):
+        '''determine if the pathname is a file or dir'''
+        if os.path.isdir(self.filepath):
+            self.path_type = 'dir'
+            #print "self.path_type: {0}".format(self.path_type)
+        elif os.path.isfile(self.filepath):
+            self.path_type = 'file'
+            #print "self.path_type: {0}".format(self.path_type)
+        else:
+            self.path_type = "Unsupported path type"
+            #print "self.path_type: {0}".format(self.path_type)
+
+    def load_test_suite(self, path_type):
+        '''load tests either from one file, or a set of files'''
+        if self.path_type == 'file':
+            self.load_file(self.filepath)
+        elif self.path_type == 'dir':
+            self.gather_files()
+            for f in self.test_files:
+                self.load_file(f)
+
+    def gather_files(self):
+        rootDir = self.filepath
+        for dirName, subdirList, fileList in os.walk(rootDir):
+            #print('Found directory: %s' % dirName)
+            for fname in fileList:
+                #print('\t%s' % fname)
+                if fname.endswith('.tst'):
+                    start_path = dirName + os.sep + fname
+                    #print "start_path: {0}".format(start_path)
+                    full_path = os.path.abspath(start_path) 
+                    #print "full_path: {0}".format(full_path)
+                    self.test_files.append(full_path)
+
+    def find_state_dir(self, state_name):
+        state_path = None
+        for path in self.search_paths:
+            rootDir = path
+            for dirName, subdirList, fileList in os.walk(rootDir):
+                mydir = dirName.split(os.sep)[-1]
+                if state_name == mydir:
+                    state_path = dirName
+                    return state_path
+        return state_path
+
         
+
+def find_state_dir(state_name):
+    '''Given a state name, find the matching directory'''
+    sc = SaltCheck()
+    paths = sc.get_state_search_path_list()
+    tl = TestLoader(search_paths = paths)
+    mydir = tl.find_state_dir(state_name)
+    return  paths, "\n", mydir
 
 def is_valid_module(module_name):
     sc = SaltCheck()
