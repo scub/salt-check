@@ -22,6 +22,19 @@ class SaltCheck(object):
         self.assertions_list = "assertEqual assertNotEqual assertTrue assertFalse assertIn assertGreater assertGreaterEqual assertLess assertLessEqual".split()
         self.modules = self.populate_salt_modules_list()
 
+    def refresh_state(statename):
+        '''populates minion cache with a particular state
+        salt web refresh_test.refresh mystate'''
+        x = __salt__['state.sls'](statename, test='true')
+        return x
+
+    def refresh_all_states():
+        '''populates minion cache with all states applying to the minion
+           as determined by top file
+        salt web refresh_test.refresh_all_states  mystate'''
+        x = __salt__['state.highstate'](test='true')
+        return x
+
     def populate_salt_modules_list(self):
         valid_modules = __salt__['sys.list_modules']()
         return valid_modules
@@ -255,14 +268,28 @@ class SaltCheck(object):
         root_dir = self.__opts__['root_dir']
         states_dirs = self.__opts__['states_dirs']
         environment = self.__opts__['environment']
-        return {'cachedir':cachedir, 'root_dir':root_dir, 'states_dirs':states_dirs, 'environment':environment}
+        file_roots = self.__opts__['file_roots']
+        return {'cachedir':cachedir, 'root_dir':root_dir, 'states_dirs':states_dirs, 'environment':environment, 'file_roots':file_roots}
         #return self.__opts__
 
-    def show_state_search_path(self):
+    def get_state_search_path_list(self):
+        '''For the state file system, return a list of paths to search for states'''
+        # state cache should be updated before running this method
+        search_list = []
         root_dir = self.__opts__.get('root_dir', None)
         cachedir = self.__opts__.get('cachedir', None)
         file_roots = self.__opts__.get('file_roots', None)
-        return root_dir, cachedir, file_roots
+        environment = self.__opts__['environment']
+        if environment:
+            path = cachedir + os.sep + "files" + os.sep + environment
+            search_list.append(path)
+        path = cachedir + os.sep + "files" + os.sep + "base"
+        search_list.append(path)
+        return search_list
+
+    def get_state_dir(self):
+        paths = self.get_state_search_path_list()
+        
 
 def is_valid_module(module_name):
     sc = SaltCheck()
@@ -284,10 +311,15 @@ def show_minion_options():
     sc = SaltCheck()
     return sc.show_minion_options()
 
-def show_state_search_path():
+def get_state_search_path_list():
     ''' Show the search paths used for states '''
     sc = SaltCheck()
-    return sc.show_state_search_path()
+    return sc.get_state_search_path_list()
+
+def get_state_dir():
+    ''' Show the search paths used for states and return the full path to the state dir '''
+    sc = SaltCheck()
+    return sc.get_state_dir()
 
 def run_test(**kwargs):
     '''
