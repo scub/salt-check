@@ -42,7 +42,8 @@ class SaltCheck(object):
         return  x['base']
 
     def populate_salt_modules_list(self):
-        valid_modules = __salt__['sys.list_modules']()
+        #valid_modules = __salt__['sys.list_modules']()
+        valid_modules = self.call_salt_command(fun='sys.list_modules', args=None, kwargs=None)
         return valid_modules
 
     def is_valid_module(self, module_name):
@@ -161,7 +162,7 @@ class SaltCheck(object):
         '''
         Test if two objects are not equal
         '''
-        result = (True, None)
+        result = (True)
         try:
             assert (expected != returned), "{0} is equal to {1}".format(expected, returned)
         except AssertionError as err:
@@ -174,7 +175,7 @@ class SaltCheck(object):
         Test if an boolean is True
         '''
         # may need to cast returned to string
-        result = (True, None)
+        result = (True)
         try:
             assert (returned is True), "{0} not True".format(returned)
         except AssertionError as err:
@@ -187,7 +188,7 @@ class SaltCheck(object):
         Test if an boolean is False
         '''
         # may need to cast returned to string
-        result = (True, None)
+        result = (True)
         try:
             assert (returned is False), "{0} not False".format(returned)
         except AssertionError as err:
@@ -199,7 +200,7 @@ class SaltCheck(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = (True, None)
+        result = (True)
         try:
             assert (expected in returned), "{0} not False".format(returned)
         except AssertionError as err:
@@ -211,7 +212,7 @@ class SaltCheck(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = (True, None)
+        result = (True)
         try:
             assert (expected not in returned), "{0} not False".format(returned)
         except AssertionError as err:
@@ -223,7 +224,7 @@ class SaltCheck(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = (True, None)
+        result = (True)
         try:
             assert (expected > returned), "{0} not False".format(returned)
         except AssertionError as err:
@@ -235,7 +236,7 @@ class SaltCheck(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = (True, None)
+        result = (True)
         try:
             assert (expected >= returned), "{0} not False".format(returned)
         except AssertionError as err:
@@ -247,7 +248,7 @@ class SaltCheck(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = (True, None)
+        result = (True)
         try:
             assert (expected < returned), "{0} not False".format(returned)
         except AssertionError as err:
@@ -259,7 +260,7 @@ class SaltCheck(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = (True, None)
+        result = (True)
         try:
             assert (expected <= returned), "{0} not False".format(returned)
         except AssertionError as err:
