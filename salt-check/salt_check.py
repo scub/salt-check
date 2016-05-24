@@ -67,10 +67,14 @@ class SaltCheck(object):
 
     def is_valid_function(self, module_name, function):
         '''Determine if a function is valid for a module'''
-        functions = self.call_salt_command(fun='sys.list_functions',
-                                           args=[module_name],
+        try:
+            functions = self.call_salt_command(fun='sys.list_functions',
+                                           args=module_name,
                                            kwargs=None)
+        except Exception:
+            functions = ["unable to look up functions"]
         return "{}.{}".format(module_name, function) in functions
+        #return [functions]
 
     def is_valid_test(self, test_dict):
         '''Determine if a test contains:
@@ -102,17 +106,31 @@ class SaltCheck(object):
 
     def call_salt_command(self,
                           fun,
-                          args,
-                          kwargs):
+                          args=None,
+                          kwargs=None):
         '''Generic call of salt Caller command'''
         value = False
         try:
-            if kwargs:
+            if args and kwargs:
                 value = self.salt_lc.function(fun, args, kwargs)
-            elif args:
+            elif args and not kwargs:
                 value = self.salt_lc.function(fun, args)
+            elif not args and kwargs:
+                value = self.salt_lc.function(fun, kwargs)
             else:
                 value = self.salt_lc.function(fun)
+ 
+        except Exception as err:
+            value = err
+        return value
+
+    def call_salt_command_test(self,
+                          fun
+                          ):
+        '''Generic call of salt Caller command'''
+        value = False
+        try:
+            value = self.salt_lc.function(fun)
         except Exception as err:
             value = err
         return value
@@ -508,3 +526,11 @@ def run_test(**kwargs):
     else:
         return "test must be dictionary"
     #return test_dict_str
+
+if __name__ == "__main__":
+    sc = SaltCheck()
+    print "module: test, function: ping --> {}".format(sc.is_valid_function('test', 'ping'))
+    print "module: test, function: pong --> {}".format(sc.is_valid_function('test', 'pong'))
+    #print sc.call_salt_command('test', 'ping')
+    #print sc.call_salt_command('sys.list_functions', 'test')
+    #print sc.call_salt_command_test('test.ping')

@@ -9,13 +9,26 @@ from salt_check import SaltCheck
 class MyClass(unittest.TestCase):
 
     def setUp(self):
-        mt = SaltCheck()
+        self.mt = SaltCheck()
 
     def tearDown(self):
         pass
 
-    def test_0(self):
-        self.assertEqual(True, True) 
+    def test_valid_module_1(self):
+        val = self.mt.is_valid_module('invalid-name')
+        self.assertEqual(val, False) 
+
+    def test_valid_module_2(self):
+        val = self.mt.is_valid_module('test')
+        self.assertEqual(val, True) 
+
+    def test_valid_function_1(self):
+        val = self.mt.is_valid_function('test', 'ping')
+        self.assertEqual(val, True) 
+
+    def test_valid_function_2(self):
+        val = self.mt.is_valid_function('test', 'invalid-function')
+        self.assertEqual(val, False) 
 
     def test_1_assert_equal(self):
         val = SaltCheck.assert_equal(True, True)
