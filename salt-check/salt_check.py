@@ -129,7 +129,7 @@ class SaltCheck(object):
 
     def run_test(self, test_dict):
         '''Run a single salt_check test'''
-        if is_valid_test(test_dict):
+        if self.is_valid_test(test_dict):
             mod_and_func = test_dict['module_and_function']
             args = test_dict.get('args', None)
             assertion = test_dict['assertion']
@@ -348,7 +348,7 @@ class StateTestLoader(object):
         '''gather files for a test suite'''
         filepath = filepath + os.sep + 'salt-check-tests'
         rootDir = filepath
-        for dirName, fileList in os.walk(rootDir): # subdirList
+        for dirName, subdirList, fileList in os.walk(rootDir): # subdirList
             for fname in fileList:
                 if fname.endswith('.tst'):
                     start_path = dirName + os.sep + fname
@@ -361,13 +361,24 @@ class StateTestLoader(object):
         state_path = None
         for path in self.search_paths:
             rootDir = path
-            for dirName in os.walk(rootDir):
+            for dirName, subdirList, fileList in os.walk(rootDir):
                 mydir = dirName.split(os.sep)[-1]
                 if state_name == mydir:
                     state_path = dirName
                     return state_path
         return state_path
 
+
+def _get_test_files(state_name):
+    '''Given a path to the state files, gather the list of test files under 
+    the salt-check-test subdir'''
+    sc = SaltCheck()
+    ral = sc.cache_master_files()
+    paths = sc.get_state_search_path_list()
+    stl = StateTestLoader(search_paths = paths)
+    mydir = stl.find_state_dir(state_name)
+    stl.gather_files(mydir)
+    return stl.test_files
 
 def run_state_tests(state_name):
     '''run state tests'''
@@ -379,7 +390,7 @@ def run_state_tests(state_name):
     stl = StateTestLoader(search_paths=paths)
     mydir = stl.find_state_dir(state_name)
     stl.gather_files(mydir)
-    get_test_files(state_name)
+    _get_test_files(state_name)
     stl.load_test_suite()
     results_dict = {}
     for key, value in stl.test_dict.items():
