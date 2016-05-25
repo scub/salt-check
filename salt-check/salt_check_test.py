@@ -14,6 +14,14 @@ class MyClass(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_call_salt_command_1(self):
+        val = self.mt.call_salt_command('test.ping')
+        self.assertEqual(val, True) 
+
+    def test_call_salt_command_2(self):
+        val = self.mt.call_salt_command('test.ping', 'bad-arg')
+        self.assertNotEqual(val, True) 
+
     def test_valid_module_1(self):
         val = self.mt.is_valid_module('invalid-name')
         self.assertEqual(val, False) 
