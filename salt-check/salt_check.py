@@ -380,6 +380,11 @@ def _get_test_files(state_name):
     stl.gather_files(mydir)
     return stl.test_files
 
+def _get_top_states():
+    ''' Show the dirs for the top file used for a particular minion'''
+    sc = SaltCheck()
+    return sc.get_top_states()
+
 def run_state_tests(state_name):
     '''run state tests'''
     if not state_name:
@@ -400,7 +405,7 @@ def run_state_tests(state_name):
 
 def run_highstate_tests():
     '''run highstate tests'''
-    states = get_top_states()
+    states = _get_top_states()
     return_dict = {}
     for state in states:
         ret_dict = run_state_tests(state)
