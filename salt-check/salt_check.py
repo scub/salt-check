@@ -28,7 +28,6 @@ class SaltCheck(object):
     def cache_master_files(self):
         ''' equivalent to a salt cli: salt web cp.cache_master
         note: should do this for each env in file_root'''
-        #x = __salt__['cp.cache_master']
         try:
             returned = self.call_salt_command(fun='cp.cache_master',
                                               args=None,
@@ -39,19 +38,16 @@ class SaltCheck(object):
 
     def get_top_states(self):
         ''' equivalent to a salt cli: salt web state.show_top'''
-        #inner = []
         try:
             returned = self.call_salt_command(fun='state.show_top',
                                               args=None,
                                               kwargs=None)
-            #key, value = x.items()
         except:
             pass
         return  returned['base']
 
     def populate_salt_modules_list(self):
         '''return a list of all modules available on minion'''
-        #valid_modules = __salt__['sys.list_modules']()
         valid_modules = self.call_salt_command(fun='sys.list_modules',
                                                args=None,
                                                kwargs=None)
@@ -74,7 +70,6 @@ class SaltCheck(object):
         except Exception:
             functions = ["unable to look up functions"]
         return "{}.{}".format(module_name, function) in functions
-        #return [functions]
 
     def is_valid_test(self, test_dict):
         '''Determine if a test contains:
@@ -100,9 +95,6 @@ class SaltCheck(object):
         if expected_return:
             tots += 1
         return tots >= 6
-
-    #def is_valid_test(self, test_dict):
-    #    return True
 
     def call_salt_command(self,
                           fun,
@@ -135,18 +127,11 @@ class SaltCheck(object):
             value = err
         return value
 
-    #def run_test(self, test_dict):
-    #    return type(test_dict)
-
     def run_test(self, test_dict):
         '''Run a single salt_check test'''
         if is_valid_test(test_dict):
             mod_and_func = test_dict['module_and_function']
             args = test_dict.get('args', None)
-            # handling the right number of args should be done elsewhere
-            # need to handle lists nicely here...or at least fail nicely
-            #if args and args not isinstance(args, list):
-            #    args = list(args.split())
             assertion = test_dict['assertion']
             expected_return = test_dict['expected-return']
             kwargs = test_dict.get('kwargs', None)
@@ -172,13 +157,10 @@ class SaltCheck(object):
             elif assertion == "assertLessEqual":
                 value = self.assert_less_equal(expected_return, actual_return)
             else:
-                value = (False, None)
+                value = False
         else:
-            value = (False, "Invalid test: {}".format(test_dict))
+            value = "False: Invalid test"
         return value
-
-        #return [mod_and_func, args, kwargs]
-
 
     @staticmethod
     def assert_equal(expected, returned):
@@ -209,7 +191,6 @@ class SaltCheck(object):
         '''
         Test if an boolean is True
         '''
-        # may need to cast returned to string
         result = (True)
         try:
             assert (returned is True), "{0} not True".format(returned)
@@ -222,7 +203,6 @@ class SaltCheck(object):
         '''
         Test if an boolean is False
         '''
-        # may need to cast returned to string
         result = (True)
         try:
             assert (returned is False), "{0} not False".format(returned)
@@ -314,16 +294,13 @@ class SaltCheck(object):
                 'states_dirs':states_dirs,
                 'environment':environment,
                 'file_roots':file_roots}
-        #return self.__opts__
 
     def get_state_search_path_list(self):
         '''For the state file system, return a
            list of paths to search for states'''
         # state cache should be updated before running this method
         search_list = []
-        #root_dir = self.__opts__.get('root_dir', None)
         cachedir = self.__opts__.get('cachedir', None)
-        #file_roots = self.__opts__.get('file_roots', None)
         environment = self.__opts__['environment']
         if environment:
             path = cachedir + os.sep + "files" + os.sep + environment
@@ -361,10 +338,6 @@ class StateTestLoader(object):
         try:
             myfile = open(filepath, 'r')
             contents_yaml = yaml.load(myfile)
-            #print "contents_yaml: {0}".format(contents_yaml)
-            #if self.check_file_is_valid(contents_yaml):
-            #    for k, v in contents_yaml.items():
-            #        self.test_dict[k] = v
             for key, value in contents_yaml.items():
                 self.test_dict[key] = value
         except:
@@ -376,14 +349,10 @@ class StateTestLoader(object):
         filepath = filepath + os.sep + 'salt-check-tests'
         rootDir = filepath
         for dirName, fileList in os.walk(rootDir): # subdirList
-            #print('Found directory: %s' % dirName)
             for fname in fileList:
-                #print('\t%s' % fname)
                 if fname.endswith('.tst'):
                     start_path = dirName + os.sep + fname
-                    #print "start_path: {0}".format(start_path)
                     full_path = os.path.abspath(start_path)
-                    #print "full_path: {0}".format(full_path)
                     self.test_files.append(full_path)
         return
 
@@ -392,7 +361,6 @@ class StateTestLoader(object):
         state_path = None
         for path in self.search_paths:
             rootDir = path
-            #for dirName, subdirList, fileList in os.walk(rootDir):
             for dirName in os.walk(rootDir):
                 mydir = dirName.split(os.sep)[-1]
                 if state_name == mydir:
@@ -400,41 +368,6 @@ class StateTestLoader(object):
                     return state_path
         return state_path
 
-
-
-def find_state_dir(state_name):
-    '''Given a state name, find the matching directory'''
-    scheck = SaltCheck()
-    paths = scheck.get_state_search_path_list()
-    stl = StateTestLoader(search_paths=paths)
-    mydir = stl.find_state_dir(state_name)
-    #return  paths, "\n", mydir
-    return  mydir
-
-def get_test_files(state_name):
-    '''Given a path to the state files, gather the list of test files under
-    the salt-check-test subdir'''
-    scheck = SaltCheck()
-    scheck.cache_master_files()
-    paths = scheck.get_state_search_path_list()
-    stl = StateTestLoader(search_paths=paths)
-    mydir = stl.find_state_dir(state_name)
-    stl.gather_files(mydir)
-    return stl.test_files
-
-def get_tests(state_name):
-    '''gather the tests in a test suite'''
-    if not state_name:
-        return "State name required"
-    scheck = SaltCheck()
-    scheck.cache_master_files()
-    paths = scheck.get_state_search_path_list()
-    stl = StateTestLoader(search_paths=paths)
-    mydir = stl.find_state_dir(state_name)
-    stl.gather_files(mydir)
-    get_test_files(state_name)
-    stl.load_test_suite()
-    return stl.test_dict
 
 def run_state_tests(state_name):
     '''run state tests'''
@@ -464,53 +397,12 @@ def run_highstate_tests():
         #return_dict[state] = ret_dict
     return return_dict
 
-def is_valid_module(module_name):
-    '''determine if module is valid'''
-    scheck = SaltCheck()
-    return scheck.is_valid_module(module_name)
-
-def is_valid_function(module_name, function):
-    '''determine if function is valid'''
-    scheck = SaltCheck()
-    return scheck.is_valid_function(module_name, function)
-
-def is_valid_test(test_dict):
-    '''determine if test is valid'''
-    scheck = SaltCheck()
-    return scheck.is_valid_test(test_dict)
-
-def sync_state_tree():
-    '''Sync the state tree'''
-    scheck = SaltCheck()
-    return scheck.cache_master_files()
-
-def show_minion_options():
-    '''Show minion config options'''
-    scheck = SaltCheck()
-    return scheck.show_minion_options()
-
-def get_state_search_path_list():
-    ''' Show the search paths used for states '''
-    scheck = SaltCheck()
-    return scheck.get_state_search_path_list()
-
-def get_state_dir():
-    ''' Show the search paths used for states and
-        return the full path to the state dir '''
-    scheck = SaltCheck()
-    return scheck.get_state_dir()
-
-def get_top_states():
-    ''' Show the dirs for the top file used for a particular minion'''
-    scheck = SaltCheck()
-    return scheck.get_top_states()
-
 def run_test(**kwargs):
     '''
     Enables running one salt_check test via cli
     CLI Example::
         salt '*' salt_check.run_test
-          '{"module_and_function": "test.echo",
+          test='{"module_and_function": "test.echo",
             "assertion": "assertEqual",
             "expected-return": "This works!",
             "args":"This works!" }'
@@ -518,14 +410,10 @@ def run_test(**kwargs):
     # salt converts the string to a dictionary auto-magically
     scheck = SaltCheck()
     test = kwargs.get('test', None)
-    #test = "'" + test + "'"
-    #return "type of object is {}".format(type(test))
-    #return "str given is {}".format(test)
     if test and isinstance(test, dict):
         return scheck.run_test(test)
     else:
         return "test must be dictionary"
-    #return test_dict_str
 
 if __name__ == "__main__":
     sc = SaltCheck()
