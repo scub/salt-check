@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-import yaml
 import unittest
+import sys, os, os.path
+import yaml
+sys.path.append(os.path.abspath(sys.path[0]) + '/../')
 from salt_check import SaltCheck
 from salt_check import StateTestLoader
-#sys.path.append(os.path.abspath(sys.path[0]) + '/../')
 
 # Note: the order tests are run is arbitrary!
 
@@ -57,7 +58,7 @@ class MyClass(unittest.TestCase):
         mydict = {"module_and_function": "test.echo",
                   "assertion": "assertEqual",
                   "expected-return": "This works!",
-                  "args":"This works!" }
+                  "args": ["This works!"] }
         val = self.mt.run_test(mydict)
         self.assertEqual(val, True) 
 
