@@ -2,9 +2,22 @@
 import yaml
 import unittest
 from salt_check import SaltCheck
+from salt_check import StateTestLoader
 #sys.path.append(os.path.abspath(sys.path[0]) + '/../')
 
 # Note: the order tests are run is arbitrary!
+
+class MyClass2(unittest.TestCase):
+
+    def setUp(self):
+        self.st = StateTestLoader("/tmp")
+
+    def tearDown(self):
+        pass
+
+    #def test_load_file_1(self):
+    #    val = self.st.load_file("/tmp/testfile.tst")
+    #    self.assertNotEqual(val, None) 
 
 class MyClass(unittest.TestCase):
 
