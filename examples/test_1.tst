@@ -1,6 +1,7 @@
 example-test:
   mod_func: cmd.run
-  args: uptime
+  args:
+    - uptime
   kwargs:
   pillar-data: 
   assertion: assertNotEqual

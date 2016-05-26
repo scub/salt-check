@@ -1,114 +1,165 @@
 #!/usr/bin/env python
 '''This custom salt module makes it easy to test salt states and highstates.
    Author: William Cannon  william period cannon at gmail dot com'''
-import json
-import salt.client
-import salt.config
-import yaml
 import os
+import yaml
 import os.path
+import salt.client
+import salt.minion
+import salt.config
 
-class Tester(object):
+class SaltCheck(object):
     '''
     This class implements the salt_check
     '''
 
     def __init__(self):
-        self.salt_lc = salt.client.Caller()
+        self.__opts__ = salt.config.minion_config('/etc/salt/minion')
+        self.salt_lc = salt.client.Caller(mopts=self.__opts__)
         self.results_dict = {}
         self.results_dict_summary = {}
+        self.assertions_list = '''assertEqual assertNotEqual
+                                  assertTrue assertFalse
+                                  assertIn assertGreater
+                                  assertGreaterEqual
+                                  assertLess assertLessEqual'''.split()
+        self.modules = self.populate_salt_modules_list()
 
-    def run_one_test(self, minion_list, test_dict):
-        '''
-        Run one salt_check test, return results
-        '''
-        results_dict = {}
-        test_name = test_dict.keys()[0]
-        m_f = test_dict[test_name].get('module_and_function', None)
-        t_args = test_dict[test_name].get('args', None)
-        if not t_args:
-            t_args = []
-        elif not isinstance(t_args, list):
-            # e.g. args: x y z --> convert to ['x','y','z']
-            t_args = t_args.split()
-        t_kwargs = test_dict[test_name].get('kwargs', None)
-        pillar_data = test_dict[test_name].get('pillar-data', None)
-        if pillar_data:
-            if not t_kwargs:
-                t_kwargs = {}
-            t_kwargs['pillar'] = pillar_data
-        assertion = test_dict[test_name].get('assertion', None)
-        expected_return = test_dict[test_name].get('expected-return', None)
-        #print "\ntest name: {}".format(test_name)
-        #print "module and function: {}".format(m_f)
-        #print "args: {}".format(t_args)
-        #print "kwargs---> {}".format(t_kwargs)
-        #print "pillar---> {}".format(pillar_data)
-        values = self.call_salt_command(tgt=minion_list,
-                                        fun=m_f,
-                                        arg=t_args,
-                                        kwarg=t_kwargs,
-                                        expr_form='list')
-        #print "returned from client: {}".format(values)
-        for key, val in values.items():
-            if assertion == "assertEqual":
-                value = self.assert_equal(expected_return, val)
-                results_dict[key] = value
-            elif assertion == "assertNotEqual":
-                value = self.assert_not_equal(expected_return, val)
-                results_dict[key] = value
-            elif assertion == "assertTrue":
-                value = self.assert_true(val)
-                results_dict[key] = value
-            elif assertion == "assertFalse":
-                value = self.assert_false(val)
-                results_dict[key] = value
-            elif assertion == "assertIn":
-                value = self.assert_in(expected_return, val)
-                results_dict[key] = value
-            elif assertion == "assertNotIn":
-                value = self.assert_not_in(expected_return, val)
-                results_dict[key] = value
-            elif assertion == "assertGreater":
-                value = self.assert_greater(expected_return, val)
-                results_dict[key] = value
-            elif assertion == "assertGreaterEqual":
-                value = self.assert_greater_equal(expected_return, val)
-                results_dict[key] = value
-            elif assertion == "assertLess":
-                value = self.assert_less(expected_return, val)
-                results_dict[key] = value
-            elif assertion == "assertLessEqual":
-                value = self.assert_less_equal(expected_return, val)
-                results_dict[key] = value
-            else:
-                value = "???"
-        return [test_name, results_dict]
+    def cache_master_files(self):
+        ''' equivalent to a salt cli: salt web cp.cache_master
+        note: should do this for each env in file_root'''
+        try:
+            returned = self.call_salt_command(fun='cp.cache_master',
+                                              args=None,
+                                              kwargs=None)
+        except:
+            pass
+        return returned
 
+    def get_top_states(self):
+        ''' equivalent to a salt cli: salt web state.show_top'''
+        try:
+            returned = self.call_salt_command(fun='state.show_top',
+                                              args=None,
+                                              kwargs=None)
+        except:
+            pass
+        return  returned['base']
+
+    def populate_salt_modules_list(self):
+        '''return a list of all modules available on minion'''
+        valid_modules = self.call_salt_command(fun='sys.list_modules',
+                                               args=None,
+                                               kwargs=None)
+        return valid_modules
+
+    def is_valid_module(self, module_name):
+        '''Determines if a module is valid on a minion'''
+        if module_name not in self.modules:
+            val = False
+        else:
+            val = True
+        return val
+
+    def is_valid_function(self, module_name, function):
+        '''Determine if a function is valid for a module'''
+        try:
+            functions = self.call_salt_command(fun='sys.list_functions',
+                                           args=module_name,
+                                           kwargs=None)
+        except Exception:
+            functions = ["unable to look up functions"]
+        return "{}.{}".format(module_name, function) in functions
+
+    def is_valid_test(self, test_dict):
+        '''Determine if a test contains:
+             a test name,
+             a valid module and function,
+             a valid assertion,
+             an expected return value'''
+        tots = 0 # need 6 to pass test
+        m_and_f = test_dict.get('module_and_function', None)
+        assertion = test_dict.get('assertion', None)
+        expected_return = test_dict.get('expected-return', None)
+        if m_and_f:
+            tots += 1
+            module, function = m_and_f.split('.')
+            if self.is_valid_module(module):
+                tots += 1
+            if self.is_valid_function(module, function):
+                tots += 1
+        if assertion:
+            tots += 1
+            if assertion in self.assertions_list:
+                tots += 1
+        if expected_return:
+            tots += 1
+        return tots >= 6
 
     def call_salt_command(self,
                           fun,
-                          arg=(),
-                          timeout=None,
-                          expr_form='compound',
-                          ret='',
-                          jid='',
-                          kwarg=None,
-                          **kwargs):
-        '''Generic call of salt command'''
-        value = True
+                          args=None,
+                          kwargs=None):
+        '''Generic call of salt Caller command'''
+        value = False
         try:
-            if self.transport == 'salt':
-                value = self.salt_lc.cmd(fun, arg, timeout,
-                                     expr_form, ret, jid, kwarg, **kwargs)
+            if args and kwargs:
+                value = self.salt_lc.function(fun, args, kwargs)
+            elif args and not kwargs:
+                value = self.salt_lc.function(fun, args)
+            elif not args and kwargs:
+                value = self.salt_lc.function(fun, kwargs)
             else:
-                value = self.salt_lc.cmd(fun, arg, timeout,
-                                     expr_form, kwarg, **kwargs)
-             
-            #print "value = {0}".format(value)
-        except Exception, error:
-            print error
-            value = False
+                value = self.salt_lc.function(fun)
+ 
+        except Exception as err:
+            value = err
+        return value
+
+    def call_salt_command_test(self,
+                          fun
+                          ):
+        '''Generic call of salt Caller command'''
+        value = False
+        try:
+            value = self.salt_lc.function(fun)
+        except Exception as err:
+            value = err
+        return value
+
+    def run_test(self, test_dict):
+        '''Run a single salt_check test'''
+        if self.is_valid_test(test_dict):
+            mod_and_func = test_dict['module_and_function']
+            args = test_dict.get('args', None)
+            assertion = test_dict['assertion']
+            expected_return = test_dict['expected-return']
+            kwargs = test_dict.get('kwargs', None)
+            actual_return = self.call_salt_command(mod_and_func, args, kwargs)
+            if assertion == "assertEqual":
+                value = self.assert_equal(expected_return, actual_return)
+            elif assertion == "assertNotEqual":
+                value = self.assert_not_equal(expected_return, actual_return)
+            elif assertion == "assertTrue":
+                value = self.assert_true(expected_return)
+            elif assertion == "assertFalse":
+                value = self.assert_false(expected_return)
+            elif assertion == "assertIn":
+                value = self.assert_in(expected_return, actual_return)
+            elif assertion == "assertNotIn":
+                value = self.assert_not_in(expected_return, actual_return)
+            elif assertion == "assertGreater":
+                value = self.assert_greater(expected_return, actual_return)
+            elif assertion == "assertGreaterEqual":
+                value = self.assert_greater_equal(expected_return, actual_return)
+            elif assertion == "assertLess":
+                value = self.assert_less(expected_return, actual_return)
+            elif assertion == "assertLessEqual":
+                value = self.assert_less_equal(expected_return, actual_return)
+            else:
+                value = False
+        else:
+            value = "False: Invalid test"
         return value
 
     @staticmethod
@@ -120,7 +171,7 @@ class Tester(object):
         try:
             assert (expected == returned), "{0} is not equal to {1}".format(expected, returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
     @staticmethod
@@ -128,11 +179,11 @@ class Tester(object):
         '''
         Test if two objects are not equal
         '''
-        result = True
+        result = (True)
         try:
             assert (expected != returned), "{0} is equal to {1}".format(expected, returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
     @staticmethod
@@ -140,12 +191,11 @@ class Tester(object):
         '''
         Test if an boolean is True
         '''
-        # may need to cast returned to string
-        result = True
+        result = (True)
         try:
             assert (returned is True), "{0} not True".format(returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
     @staticmethod
@@ -153,12 +203,11 @@ class Tester(object):
         '''
         Test if an boolean is False
         '''
-        # may need to cast returned to string
-        result = True
+        result = (True)
         try:
             assert (returned is False), "{0} not False".format(returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
     @staticmethod
@@ -166,11 +215,11 @@ class Tester(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = True
+        result = (True)
         try:
             assert (expected in returned), "{0} not False".format(returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
     @staticmethod
@@ -178,11 +227,11 @@ class Tester(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = True
+        result = (True)
         try:
             assert (expected not in returned), "{0} not False".format(returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
     @staticmethod
@@ -190,11 +239,11 @@ class Tester(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = True
+        result = (True)
         try:
             assert (expected > returned), "{0} not False".format(returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
     @staticmethod
@@ -202,11 +251,11 @@ class Tester(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = True
+        result = (True)
         try:
             assert (expected >= returned), "{0} not False".format(returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
     @staticmethod
@@ -214,11 +263,11 @@ class Tester(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = True
+        result = (True)
         try:
             assert (expected < returned), "{0} not False".format(returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
     @staticmethod
@@ -226,115 +275,62 @@ class Tester(object):
         '''
         Test if a value is in the list of returned values
         '''
-        result = True
+        result = (True)
         try:
             assert (expected <= returned), "{0} not False".format(returned)
         except AssertionError as err:
-            result = [False, err]
+            result = "False: " + str(err)
         return result
 
-    def summarize_results(self):
-        # save this to another separate data structure for easy retrieval in "compact/regular" mode
-        '''
-        Walk through the results, and add a summary "passed/failed"
-        count of tests to each minion
-        '''
-        for key in self.results_dict.keys(): # get minion, and set of tests
-            #print "Minion id: {0}".format(key)
-            summary = {'pass':0, 'fail':0}
-            for ley, wal in self.results_dict[key].items(): # print test and result
-                #print "Test: {0}".format(ley).ljust(40),
-                if wal != True:
-                    summary['fail'] = summary.get('fail', 0) + 1
-                    #print "Result: False --> {0}".format(wal[1]).ljust(40)
-                else:
-                    summary['pass'] = summary.get('pass', 0) + 1
-                    #print "Result: {0}".format(wal).ljust(40)
-            self.results_dict_summary[key] = summary
-        return
+    def show_minion_options(self):
+        '''gather and return minion config options'''
+        cachedir = self.__opts__['cachedir']
+        root_dir = self.__opts__['root_dir']
+        states_dirs = self.__opts__['states_dirs']
+        environment = self.__opts__['environment']
+        file_roots = self.__opts__['file_roots']
+        return {'cachedir':cachedir,
+                'root_dir':root_dir,
+                'states_dirs':states_dirs,
+                'environment':environment,
+                'file_roots':file_roots}
 
-    def print_results_as_text(self):
-        '''
-        Print results verbosely
-        '''
-        print "\nRESULTS OF TESTS BY MINION ID:\n "
-        for key in self.results_dict.keys(): # get minion, and set of tests
-            print "Minion id: {0}".format(key)
-            print "Summary: Passed: {0}, Failed: {1}".format(
-                self.results_dict_summary[key].get('pass', 0),
-                self.results_dict_summary[key].get('fail', 0))
-            #for ley, wal in self.results_dict[key].items(): # print test and result
-            for ley, wal in sorted(self.results_dict[key].items()): # print test and result
-                print "Test: {0}".format(ley).ljust(40),
-                if wal != True:
-                    print "Result: False --> {0}".format(wal[1]).ljust(40)
-                else:
-                    print "Result: {0}".format(wal).ljust(40)
-                #print "Test: {0}                           Result: {1}".format(l,w)
-            print
+    def get_state_search_path_list(self):
+        '''For the state file system, return a
+           list of paths to search for states'''
+        # state cache should be updated before running this method
+        search_list = []
+        cachedir = self.__opts__.get('cachedir', None)
+        environment = self.__opts__['environment']
+        if environment:
+            path = cachedir + os.sep + "files" + os.sep + environment
+            search_list.append(path)
+        path = cachedir + os.sep + "files" + os.sep + "base"
+        search_list.append(path)
+        return search_list
 
-    def print_results_verbose_low(self):
-        '''
-        Print results tersely
-        '''
-        print "\nRESULTS OF TESTS BY MINION ID:\n "
-        for key in self.results_dict.keys(): # get minion, and set of tests
-            print "\nMinion id: {0}".format(key)
-            print "Summary: Passed: {0}, Failed: {1}".format(
-                self.results_dict_summary[key].get('pass', 0),
-                self.results_dict_summary[key].get('fail', 0))
-            sorted(self.results_dict[key])
-            for ley, wal in sorted(self.results_dict[key].items()): # print test and result
-                if wal != True:
-                    print "Test: {0}".format(ley).ljust(40),
-                    print "Result: False --> {0}".format(wal[1]).ljust(40)
+    def get_state_dir(self):
+        ''''return the path of the state dir'''
+        paths = self.get_state_search_path_list()
+        return paths
 
-
-class TestLoader(object):
+class StateTestLoader(object):
     '''
-    Class loads in test files
+    Class loads in test files for a state
+    e.g.  state_dir/salt-check-tests/[1.tst, 2.tst, 3.tst]
     '''
 
-    def __init__(self, file_or_dir):
-        self.filepath = file_or_dir
+    def __init__(self, search_paths):
+        self.search_paths = search_paths
         self.path_type = None
         self.test_files = [] # list of file paths
         self.test_dict = {}
 
-    def is_file_or_dir(self):
-        '''determine if the pathname is a file or dir'''
-        if os.path.isdir(self.filepath):
-            self.path_type = 'dir'
-            #print "self.path_type: {0}".format(self.path_type)
-        elif os.path.isfile(self.filepath):
-            self.path_type = 'file'
-            #print "self.path_type: {0}".format(self.path_type)
-        else:
-            self.path_type = "Unsupported path type"
-            #print "self.path_type: {0}".format(self.path_type)
-
-    def load_test_suite(self, path_type):
+    def load_test_suite(self):
         '''load tests either from one file, or a set of files'''
-        if self.path_type == 'file':
-            self.load_file(self.filepath)
-        elif self.path_type == 'dir':
-            self.gather_files()
-            for f in self.test_files:
-                self.load_file(f)
+        for myfile in self.test_files:
+            self.load_file(myfile)
 
-    def gather_files(self ):
-        rootDir = self.filepath
-        for dirName, subdirList, fileList in os.walk(rootDir):
-            #print('Found directory: %s' % dirName)
-            for fname in fileList:
-                #print('\t%s' % fname)
-                if fname.endswith('.tst'):
-                    start_path = dirName + os.sep + fname
-                    #print "start_path: {0}".format(start_path)
-                    full_path = os.path.abspath(start_path) 
-                    #print "full_path: {0}".format(full_path)
-                    self.test_files.append(full_path)
-                
     def load_file(self, filepath):
         '''
         loads in one test file
@@ -342,88 +338,103 @@ class TestLoader(object):
         try:
             myfile = open(filepath, 'r')
             contents_yaml = yaml.load(myfile)
-            #print "contents_yaml: {0}".format(contents_yaml)
-            #if self.check_file_is_valid(contents_yaml):
-            #    for k, v in contents_yaml.items():
-            #        self.test_dict[k] = v
-            for k, v in contents_yaml.items():
-                self.test_dict[k] = v
+            for key, value in contents_yaml.items():
+                self.test_dict[key] = value
         except:
             raise
         return
 
-    def check_file_is_valid(self, test_dictionary):
-        '''
-        ensure file is valid
-        '''
-        is_valid = True
-        if test_dictionary == None or len(test_dictionary.keys()) == 0:
-            return False
-        for k in test_dictionary.keys():
-            is_ok = self.check_test_is_valid(test_dictionary[k])
-            if not is_ok:
-                is_valid = False
-        return is_valid
+    def gather_files(self, filepath):
+        '''gather files for a test suite'''
+        filepath = filepath + os.sep + 'salt-check-tests'
+        rootDir = filepath
+        for dirName, subdirList, fileList in os.walk(rootDir): # subdirList
+            for fname in fileList:
+                if fname.endswith('.tst'):
+                    start_path = dirName + os.sep + fname
+                    full_path = os.path.abspath(start_path)
+                    self.test_files.append(full_path)
+        return
 
-    @staticmethod
-    def check_test_is_valid(test):
-        '''
-        checks that all tests in a file are valid
-        '''
-        # check each test from file ensuring miniumum necessary params are met, no value check
-        # must have module_and_function, assertion, expected-return
-        is_valid = True
-        reqs = ['module_and_function', 'assertion', 'expected-return']
-        for k in test.keys():
-            if k in reqs:
-                reqs.remove(k)
-        if reqs != None:
-            is_valid = False
-        return is_valid
+    def find_state_dir(self, state_name):
+        '''find and return the path to the state dir'''
+        state_path = None
+        for path in self.search_paths:
+            rootDir = path
+            for dirName, subdirList, fileList in os.walk(rootDir):
+                mydir = dirName.split(os.sep)[-1]
+                if state_name == mydir:
+                    state_path = dirName
+                    return state_path
+        return state_path
 
 
-    def get_test_as_dict(self):
-        '''
-        retrieve the tests as a dict
-        '''
-        file_dir_type = self.is_file_or_dir()
-        self.load_test_suite(file_dir_type)
-        return self.test_dict
+def _get_test_files(state_name):
+    '''Given a path to the state files, gather the list of test files under 
+    the salt-check-test subdir'''
+    sc = SaltCheck()
+    ral = sc.cache_master_files()
+    paths = sc.get_state_search_path_list()
+    stl = StateTestLoader(search_paths = paths)
+    mydir = stl.find_state_dir(state_name)
+    stl.gather_files(mydir)
+    return stl.test_files
 
+def _get_top_states():
+    ''' Show the dirs for the top file used for a particular minion'''
+    sc = SaltCheck()
+    return sc.get_top_states()
 
-def main(minion_list, client_type, test_dict, verbose):
+def run_state_tests(state_name):
+    '''run state tests'''
+    if not state_name:
+        return "State name required"
+    scheck = SaltCheck()
+    scheck.cache_master_files()
+    paths = scheck.get_state_search_path_list()
+    stl = StateTestLoader(search_paths=paths)
+    mydir = stl.find_state_dir(state_name)
+    stl.gather_files(mydir)
+    _get_test_files(state_name)
+    stl.load_test_suite()
+    results_dict = {}
+    for key, value in stl.test_dict.items():
+        result = scheck.run_test(value)
+        results_dict[key] = result
+    return {state_name : results_dict}
+
+def run_highstate_tests():
+    '''run highstate tests'''
+    states = _get_top_states()
+    return_dict = {}
+    for state in states:
+        ret_dict = run_state_tests(state)
+        return_dict.update(ret_dict)
+        #return_dict[state] = ret_dict
+    return return_dict
+
+def run_test(**kwargs):
     '''
-    main entry point
+    Enables running one salt_check test via cli
+    CLI Example::
+        salt '*' salt_check.run_test
+          test='{"module_and_function": "test.echo",
+            "assertion": "assertEqual",
+            "expected-return": "This works!",
+            "args":"This works!" }'
     '''
-    start_time = time.time()
-    #print "minion_list: {}".format(minion_list)
-    #print "client_type: {}".format(client_type)
-    #print "test_dict: {}".format(test_dict)
-    #print "verbosity: {}".format(verbose)
-    print
-
-    tester = Tester(client=client_type)
-    tester.results_dict = {} # for holding results of all tests
-    for key, val in test_dict.items():
-        result = tester.run_one_test(minion_list, {key:val})
-        test_name = result[0]
-        k_v = result[1]
-        #print "\nTest Name:  {0}".format(test_name)
-        #print "Minion      Test-Result"
-        for ley, wal in k_v.items():
-            res = tester.results_dict.get(ley, None)
-            if not res:
-                tester.results_dict[ley] = {test_name : wal}
-            else:
-                res[test_name] = wal
-                tester.results_dict[ley] = res
-            #print "{0}         {1}".format(k, v)
-    tester.summarize_results()
-    if verbose == 'low':
-        tester.print_results_verbose_low()
+    # salt converts the string to a dictionary auto-magically
+    scheck = SaltCheck()
+    test = kwargs.get('test', None)
+    if test and isinstance(test, dict):
+        return scheck.run_test(test)
     else:
-        tester.print_results_as_text()
-    print
-    end_time = time.time()
-    total_time_sec = end_time - start_time
-    print "Time to run tests: {} seconds".format(round(total_time_sec, 2))
+        return "test must be dictionary"
+
+if __name__ == "__main__":
+    sc = SaltCheck()
+    print "module: test, function: ping --> {}".format(sc.is_valid_function('test', 'ping'))
+    print "module: test, function: pong --> {}".format(sc.is_valid_function('test', 'pong'))
+    #print sc.call_salt_command('test', 'ping')
+    #print sc.call_salt_command('sys.list_functions', 'test')
+    #print sc.call_salt_command_test('test.ping')
