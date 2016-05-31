@@ -8,6 +8,7 @@ import yaml
 import salt.client
 import salt.minion
 import salt.config
+import salt.exceptions
 
 
 class SaltCheck(object):
@@ -31,14 +32,14 @@ class SaltCheck(object):
         ''' equivalent to a salt cli: salt web cp.cache_master
         note: should do this for each env in file_root'''
         # This does not get rid of previous files from a prior cache
-        # should change this to be a 'real-time' representation of 
+        # should change this to be a 'real-time' representation of
         # master cache
         try:
             returned = self.call_salt_command(fun='cp.cache_master',
                                               args=None,
                                               kwargs=None)
-        except:
-            pass
+        except Exception:
+            raise
         return returned
 
     def get_top_states(self):
@@ -47,8 +48,8 @@ class SaltCheck(object):
             returned = self.call_salt_command(fun='state.show_top',
                                               args=None,
                                               kwargs=None)
-        except:
-            pass
+        except Exception:
+            raise
         return returned['base']
 
     def populate_salt_modules_list(self):
@@ -72,7 +73,7 @@ class SaltCheck(object):
             functions = self.call_salt_command(fun='sys.list_functions',
                                                args=[module_name],
                                                kwargs=None)
-        except Exception:
+        except salt.exceptions.SaltException:
             functions = ["unable to look up functions"]
         return "{0}.{1}".format(module_name, function) in functions
 
@@ -100,7 +101,7 @@ class SaltCheck(object):
         if expected_return:
             tots += 1
         return tots >= 6
-        #return True
+        # return True
 
     def call_salt_command(self,
                           fun,
@@ -118,6 +119,8 @@ class SaltCheck(object):
             else:
                 value = self.salt_lc.function(fun)
 
+        except salt.exceptions.SaltException as err:
+            value = err
         except Exception as err:
             value = err
         return value
@@ -129,7 +132,7 @@ class SaltCheck(object):
         value = False
         try:
             value = self.salt_lc.function(fun)
-        except Exception as err:
+        except salt.exceptions.SaltException as err:
             value = err
         return value
 
@@ -295,11 +298,11 @@ class SaltCheck(object):
         states_dirs = self.__opts__['states_dirs']
         environment = self.__opts__['environment']
         file_roots = self.__opts__['file_roots']
-        return {'cachedir':cachedir,
-                'root_dir':root_dir,
-                'states_dirs':states_dirs,
-                'environment':environment,
-                'file_roots':file_roots}
+        return {'cachedir': cachedir,
+                'root_dir': root_dir,
+                'states_dirs': states_dirs,
+                'environment': environment,
+                'file_roots': file_roots}
 
     def get_state_search_path_list(self):
         '''For the state file system, return a
