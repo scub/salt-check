@@ -1,13 +1,65 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 '''This custom salt module makes it easy to test salt states and highstates.
-   Author: William Cannon  william period cannon at gmail dot com'''
+   Author: William Cannon  william period cannon at gmail dot com
+
+   Here's how it works:
+   Create a state as a directory (e.g.  /srv/salt/apache/init.sls)
+   Create a sub-directory of the state directory and name it 'salt-check-tests' (e.g. /srv/salt/apache/salt-check-tests)
+   Put one or more test files in the 'salt-check-tests' directory, each with a file name ending with .tst .
+   Note:  a test file contains 1 or more tests defined in yaml
+
+   Three ways to run tests:
+   ------------------------
+   Method 1:  Test with CLI parameter
+   salt '*' salt_check.run_test  
+     test='{"module_and_function": "test.echo",
+            "args":"This works!”,
+            "assertion": "assertEqual",
+            "expected-return": "This works!"}'
+
+   Method 2: Test state logic dynamically
+   salt '*' salt_check.run_state_tests apache
+
+   Method 3: Test highstate logic dynamically
+   salt '*' salt_check.run_highstate_tests
+
+   YAML Syntax for one test (replace text in caps):
+   ------------------------------------------------
+   UNIQUE-TEST-NAME:
+     module_and_function:SALT_EXECUTION_MODULE.FUNCTION_NAME
+     args:
+       - A
+       - LIST OF
+       - ARGUMENTS FOR
+       - THE FUNCTION
+     kwargs:
+       - A
+       - LIST OF
+       - KEYWORD ARGUMENTS FOR
+       - THE FUNCTION
+     assertion: [assertEqual | assertNotEqual | assertTrue | assertFalse |
+                assertIn     | assertGreater  | assertGreaterEqual |
+                assertLess   | assertLessEqual ]
+     expected-return: RETURN_FROM_CALLING_SALT_EXECUTION_MODULE.FUNCTION_NAME
+
+   Quick example of a salt_check test:
+   ----------------------------------- 
+   test-1-tmp-file:
+    module_and_function: file.file_exists
+    args:
+      - /tmp/hello
+    kwargs:
+    assertion: assertEqual
+    expected-return: True'''
+
 import os
 import os.path
 import yaml
 import salt.client
 import salt.minion
 import salt.config
+import salt.loader
 import salt.exceptions
 
 
@@ -16,9 +68,12 @@ class SaltCheck(object):
     This class implements the salt_check
     '''
 
-    def __init__(self):
-        self.__opts__ = salt.config.minion_config('/etc/salt/minion')
-        self.salt_lc = salt.client.Caller(mopts=self.__opts__)
+    def __init__(self, opts=None):
+        if opts:
+            self.opts = opts
+        else:
+            self.opts = __opts__
+        self.salt_lc = salt.client.Caller(mopts=self.opts)
         self.results_dict = {}
         self.results_dict_summary = {}
         self.assertions_list = '''assertEqual assertNotEqual
@@ -293,11 +348,11 @@ class SaltCheck(object):
 
     def show_minion_options(self):
         '''gather and return minion config options'''
-        cachedir = self.__opts__['cachedir']
-        root_dir = self.__opts__['root_dir']
-        states_dirs = self.__opts__['states_dirs']
-        environment = self.__opts__['environment']
-        file_roots = self.__opts__['file_roots']
+        cachedir = self.opts['cachedir']
+        root_dir = self.opts['root_dir']
+        states_dirs = self.opts['states_dirs']
+        environment = self.opts['environment']
+        file_roots = self.opts['file_roots']
         return {'cachedir': cachedir,
                 'root_dir': root_dir,
                 'states_dirs': states_dirs,
@@ -309,8 +364,8 @@ class SaltCheck(object):
            list of paths to search for states'''
         # state cache should be updated before running this method
         search_list = []
-        cachedir = self.__opts__.get('cachedir', None)
-        environment = self.__opts__['environment']
+        cachedir = self.opts.get('cachedir', None)
+        environment = self.opts['environment']
         if environment:
             path = cachedir + os.sep + "files" + os.sep + environment
             search_list.append(path)
