@@ -200,6 +200,7 @@ class SaltCheck(object):
             expected_return = test_dict['expected-return']
             kwargs = test_dict.get('kwargs', None)
             actual_return = self.call_salt_command(mod_and_func, args, kwargs)
+            # return actual_return
             if assertion == "assertEqual":
                 value = self.assert_equal(expected_return, actual_return)
             elif assertion == "assertNotEqual":
@@ -496,12 +497,13 @@ def run_test(**kwargs):
           test='{"module_and_function": "test.echo",
             "assertion": "assertEqual",
             "expected-return": "This works!",
-            "args":"This works!" }'
+            "args":["This works!"] }'
     '''
     # salt converts the string to a dictionary auto-magically
     scheck = SaltCheck()
     test = kwargs.get('test', None)
     if test and isinstance(test, dict):
         return scheck.run_test(test)
+        #return test
     else:
         return "test must be dictionary"
