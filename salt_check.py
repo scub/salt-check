@@ -14,7 +14,7 @@
    Method 1:  Test with CLI parameter
    salt '*' salt_check.run_test  
      test='{"module_and_function": "test.echo",
-            "args":"This works!”,
+            "args":["This works!”],
             "assertion": "assertEqual",
             "expected-return": "This works!"}'
 
@@ -61,7 +61,10 @@ import salt.minion
 import salt.config
 import salt.loader
 import salt.exceptions
+import logging
+import time
 
+log = logging.getLogger(__name__)
 
 class SaltCheck(object):
     '''
@@ -89,12 +92,17 @@ class SaltCheck(object):
         # This does not get rid of previous files from a prior cache
         # should change this to be a 'real-time' representation of
         # master cache
+        log.info("cache_master_files start time: {}".format(time.time()))
         try:
             returned = self.call_salt_command(fun='cp.cache_master',
                                               args=None,
                                               kwargs=None)
+            pillar_refresh = self.call_salt_command(fun='pillar.items',
+                                              args=None,
+                                              kwargs=None)
         except Exception:
             raise
+        log.info("cache_master_files finish time: {}".format(time.time()))
         return returned
 
     def get_top_states(self):
@@ -103,9 +111,19 @@ class SaltCheck(object):
             returned = self.call_salt_command(fun='state.show_top',
                                               args=None,
                                               kwargs=None)
+            # doing this to handle states with periods
+            # e.g.  apache.vhost_web1
+            alt_states = []
+            for state in returned['base']:
+                state_bits = state.split(".")
+                state_name = state_bits[0]
+                if state_name not in alt_states:
+                    alt_states.append(state_name)
         except Exception:
             raise
-        return returned['base']
+        log.info("top states: {}".format(alt_states))
+        #return returned['base']
+        return alt_states
 
     def populate_salt_modules_list(self):
         '''return a list of all modules available on minion'''
@@ -200,6 +218,11 @@ class SaltCheck(object):
             expected_return = test_dict['expected-return']
             kwargs = test_dict.get('kwargs', None)
             actual_return = self.call_salt_command(mod_and_func, args, kwargs)
+            #log.info("expected before alteration= {}".format(expected_return))
+            #log.info("type of expected before= {}".format(type(expected_return)))
+            expected_return = self.cast_expected_to_returned_type(expected_return, actual_return)
+            #log.info("expected after alteration= {}".format(expected_return))
+            #log.info("type of expected = {}".format(type(expected_return)))
             # return actual_return
             if assertion == "assertEqual":
                 value = self.assert_equal(expected_return, actual_return)
@@ -228,11 +251,40 @@ class SaltCheck(object):
         return value
 
     @staticmethod
+    def cast_expected_to_returned_type(expected, returned):
+        '''
+        Determine the type of variable returned
+        Cast the expected to the type of variable returned
+        '''
+        ret_type = type(returned)
+        new_expected = expected
+        if expected == "False" and ret_type == bool:
+            expected = False
+        try:
+            new_expected = ret_type(expected)
+        except:
+            log.info("Unable to cast expected into type of returned")
+            log.info("returned = {}".format(returned))
+            log.info("type of returned = {}".format(type(returned)))
+            log.info("expected = {}".format(expected))
+            log.info("type of expected = {}".format(type(expected)))
+        return new_expected
+
+    @staticmethod
     def assert_equal(expected, returned):
         '''
         Test if two objects are equal
         '''
         result = True
+        #log.info("returned = {}".format(returned))
+        #log.info("type of returned = {}".format(type(returned)))
+        #log.info("expected = {}".format(expected))
+        #log.info("type of expected = {}".format(type(expected)))
+
+        #if type(returned) == bool:
+        #    returned = str(returned)
+
+
         try:
             assert (expected == returned), "{0} is not equal to {1}".format(expected, returned)
         except AssertionError as err:
@@ -269,6 +321,8 @@ class SaltCheck(object):
         Test if an boolean is False
         '''
         result = (True)
+        if type(returned) == str:
+            returned = eval(returned)
         try:
             assert (returned is False), "{0} not False".format(returned)
         except AssertionError as err:
@@ -364,6 +418,7 @@ class SaltCheck(object):
         '''For the state file system, return a
            list of paths to search for states'''
         # state cache should be updated before running this method
+        log.info("get_state_search_path_list time: {}".format(time.time()))
         search_list = []
         cachedir = self.opts.get('cachedir', None)
         environment = self.opts['environment']
@@ -412,6 +467,7 @@ class StateTestLoader(object):
 
     def gather_files(self, filepath):
         '''gather files for a test suite'''
+        log.info("gather_files: {}".format(time.time()))
         filepath = filepath + os.sep + 'salt-check-tests'
         rootDir = filepath
         for dirName, subdirList, fileList in os.walk(rootDir):
@@ -424,13 +480,17 @@ class StateTestLoader(object):
 
     def find_state_dir(self, state_name):
         '''find and return the path to the state dir'''
+        log.info("find_state_dir: {}".format(time.time()))
         state_path = None
         for path in self.search_paths:
             rootDir = path
-            for dirName, subdirList, fileList in os.walk(rootDir):
+            #log.info("rootDir: {}".format(rootDir))
+            for dirName, subdirList, fileList in os.walk(rootDir, topdown=True):
                 mydir = dirName.split(os.sep)[-1]
-                if state_name == mydir:
+                #log.info("find_state_dir mydir = {}".format(mydir))
+                if state_name == mydir and "salt-check-tests" in subdirList:
                     state_path = dirName
+                    #log.info("state_path = {}".format(dirName))
                     return state_path
         return state_path
 
@@ -438,11 +498,13 @@ class StateTestLoader(object):
 def _get_test_files(state_name):
     '''Given a path to the state files, gather the list of test files under
     the salt-check-test subdir'''
+    log.info("_get_test_files: {}".format(time.time()))
     salt_check = SaltCheck()
     paths = salt_check.get_state_search_path_list()
     stl = StateTestLoader(search_paths=paths)
     mydir = stl.find_state_dir(state_name)
     stl.gather_files(mydir)
+    #log.info("test files: {}".format(stl.test_files))
     return stl.test_files
 
 
@@ -458,22 +520,43 @@ def run_state_tests(state_name):
     CLI Example:
         salt '*' salt_check.run_state_tests STATE-NAME
     '''
+    log.info("run_state_test time: {}".format(time.time()))
+    results_dict = {}
     if not state_name:
         return "State name required"
     scheck = SaltCheck()
-    scheck.cache_master_files()
+    #log.info("Creating SaltCheck instance")
+    # this should be done manually instead scheck.cache_master_files()
+    log.info("Caching master files")
     paths = scheck.get_state_search_path_list()
+    #log.info("State search paths: {}".format(paths))
     stl = StateTestLoader(search_paths=paths)
     mydir = stl.find_state_dir(state_name)
-    stl.gather_files(mydir)
-    _get_test_files(state_name)
-    stl.load_test_suite()
-    results_dict = {}
-    for key, value in stl.test_dict.items():
-        result = scheck.run_test(value)
-        results_dict[key] = result
+    #log.info("mydir: {}".format(mydir))
+    if mydir:
+        stl.gather_files(mydir)
+        _get_test_files(state_name)
+        stl.load_test_suite()
+        results_dict = {}
+        for key, value in stl.test_dict.items():
+            result = scheck.run_test(value)
+            results_dict[key] = result
+        #log.info("State Name = {}, results_dict: {}".format(state_name, results_dict))
     return {state_name: results_dict}
 
+
+def update_master_cache():
+    '''
+    Updates the master cache onto the minion - to transfer all salt-check-tests
+    Should be done one time before running tests, and if tests are updated
+
+    CLI Example:
+        salt '*' salt_check.update_master_cache
+    '''
+    log.info("Caching master files")
+    scheck = SaltCheck()
+    scheck.cache_master_files()
+    return True
 
 def run_highstate_tests():
     '''
@@ -482,8 +565,10 @@ def run_highstate_tests():
         salt '*' salt_check.run_highstate_tests
     '''
     states = _get_top_states()
+    #log.info("States:  {}".format(states))
     return_dict = {}
     for state in states:
+        log.info("Running state test: {} @ {}".format(state, time.time()))
         ret_dict = run_state_tests(state)
         return_dict.update(ret_dict)
     return return_dict
@@ -500,6 +585,7 @@ def run_test(**kwargs):
             "args":["This works!"] }'
     '''
     # salt converts the string to a dictionary auto-magically
+    log.info("run_test time: {}".format(time.time()))
     scheck = SaltCheck()
     test = kwargs.get('test', None)
     if test and isinstance(test, dict):
