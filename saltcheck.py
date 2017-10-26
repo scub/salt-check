@@ -52,7 +52,7 @@ import os
 import time
 import yaml
 try:
-    # import salt.utils
+    import salt.utils
     import salt.client
     import salt.exceptions
 except ImportError:
@@ -258,7 +258,8 @@ class SaltCheck(object):
         self.results_dict_summary = {}
         self.assertions_list = '''assertEqual assertNotEqual
                                   assertTrue assertFalse
-                                  assertIn assertGreater
+                                  assertIn assertNotIn
+                                  assertGreater
                                   assertGreaterEqual
                                   assertLess assertLessEqual'''.split()
         self.auto_update_master_cache = _get_auto_update_cache_value
