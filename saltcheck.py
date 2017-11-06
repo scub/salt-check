@@ -338,7 +338,7 @@ class SaltCheck(object):
             assertion = test_dict['assertion']
             expected_return = test_dict['expected-return']
             actual_return = self.call_salt_command(mod_and_func, args, kwargs)
-            if assertion != "assertIn":
+            if assertion not in ["assertIn", "assertNotIn"]:
                 expected_return = self.cast_expected_to_returned_type(expected_return, actual_return)
             if assertion == "assertEqual":
                 value = self.__assert_equal(expected_return, actual_return)
