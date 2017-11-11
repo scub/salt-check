@@ -254,6 +254,22 @@ def _get_state_sls(state):
         raise
     return sls_list_state
 
+def _refresh_saltcheck_tests_dir(dirpath):
+    ''' equivalent to:
+           rm -rf dest-dir
+           salt cp.get_dir salt://STATE/saltcheck-tests dest-dir'''
+    __salt__['file.remove'](dirpath)
+
+    mypath_list = dirpath.split(os.sep)
+    mypath_list = [i for i in mypath_list if i != '']  # removing empty chars
+
+    state = mypath_list[-2]
+    source = "salt://" + state + os.sep + "saltcheck-tests"
+    dest = mypath_list[:-1] 
+    dest = dirpath
+    __salt__['cp.get_dir'](source, dirpath)
+    return
+
 
 class SaltCheck(object):
     '''
@@ -580,6 +596,10 @@ class StateTestLoader(object):
         self.test_files = []
         log.info("gather_files: {}".format(time.time()))
         filepath = filepath + os.sep + 'saltcheck-tests'
+
+        # clear out, and repopulate the saltcheck-tests for a state
+        _refresh_saltcheck_tests_dir(filepath)
+
         rootdir = filepath
         # for dirname, subdirlist, filelist in os.walk(rootdir):
         for dirname, dummy, filelist in os.walk(rootdir):
