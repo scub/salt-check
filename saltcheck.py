@@ -287,7 +287,8 @@ class SaltCheck(object):
                                   assertIn assertNotIn
                                   assertGreater
                                   assertGreaterEqual
-                                  assertLess assertLessEqual'''.split()
+                                  assertLess assertLessEqual
+                                  assertEmpty assertNotEmpty'''.split()
         self.auto_update_master_cache = _get_auto_update_cache_value
         # self.salt_lc = salt.client.Caller(mopts=__opts__)
         self.salt_lc = salt.client.Caller()
@@ -361,9 +362,9 @@ class SaltCheck(object):
             elif assertion == "assertNotEqual":
                 value = self.__assert_not_equal(expected_return, actual_return)
             elif assertion == "assertTrue":
-                value = self.__assert_true(expected_return)
+                value = self.__assert_true(actual_return)
             elif assertion == "assertFalse":
-                value = self.__assert_false(expected_return)
+                value = self.__assert_false(actual_return)
             elif assertion == "assertIn":
                 value = self.__assert_in(expected_return, actual_return)
             elif assertion == "assertNotIn":
@@ -376,6 +377,10 @@ class SaltCheck(object):
                 value = self.__assert_less(expected_return, actual_return)
             elif assertion == "assertLessEqual":
                 value = self.__assert_less_equal(expected_return, actual_return)
+            elif assertion == "assertEmpty":
+                value = self.__assert_empty(actual_return)
+            elif assertion == "assertNotEmpty":
+                value = self.__assert_not_empty(actual_return)
             else:
                 value = "Fail - bas assertion"
         else:
@@ -529,6 +534,31 @@ class SaltCheck(object):
         return result
 
     @staticmethod
+    def __assert_empty(returned):
+        '''
+        Test if a returned value is empty 
+        '''
+        result = "Pass"
+        try:
+            assert (not returned), "{0} is not empty".format(returned)
+        except AssertionError as err:
+            result = "Fail: " + str(err)
+        return result
+
+    @staticmethod
+    def __assert_not_empty(returned):
+        '''
+        Test if a returned value is not empty 
+        '''
+        result = "Pass"
+        try:
+            assert (returned), "{0} is empty".format(returned)
+        except AssertionError as err:
+            result = "Fail: " + str(err)
+        return result
+
+
+    @staticmethod
     def get_state_search_path_list():
         '''For the state file system, return a
            list of paths to search for states'''
@@ -644,3 +674,4 @@ class StateTestLoader(object):
             else:
                 log.info("path is not a directory= {}".format(full_path))
         return
+
