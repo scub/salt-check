@@ -265,7 +265,7 @@ def _refresh_saltcheck_tests_dir(dirpath):
 
     state = mypath_list[-2]
     source = "salt://" + state + os.sep + "saltcheck-tests"
-    dest = mypath_list[:-1] 
+    dest = mypath_list[:-1]
     dest = dirpath
     __salt__['cp.get_dir'](source, dirpath)
     return
@@ -322,6 +322,9 @@ class SaltCheck(object):
         if expected_return:
             tots += 1
             log.info("__is_valid_test has valid_expected_return")
+        elif assertion in ["assertEmpty", "assertNotEmpty"]:
+            tots += 1
+            log.info("__is_valid_test with no return")
         log.info("__is_valid_test score: {}".format(tots))
         return tots >= 6
 
@@ -353,9 +356,12 @@ class SaltCheck(object):
             args = test_dict.get('args', None)
             kwargs = test_dict.get('kwargs', None)
             assertion = test_dict['assertion']
-            expected_return = test_dict['expected-return']
+            try:
+                expected_return = test_dict['expected-return']
+            except KeyError:
+                pass
             actual_return = self.call_salt_command(mod_and_func, args, kwargs)
-            if assertion not in ["assertIn", "assertNotIn"]:
+            if assertion not in ["assertIn", "assertNotIn", "assertEmpty", "assertNotEmpty"]:
                 expected_return = self.cast_expected_to_returned_type(expected_return, actual_return)
             if assertion == "assertEqual":
                 value = self.__assert_equal(expected_return, actual_return)
@@ -536,7 +542,7 @@ class SaltCheck(object):
     @staticmethod
     def __assert_empty(returned):
         '''
-        Test if a returned value is empty 
+        Test if a returned value is empty
         '''
         result = "Pass"
         try:
@@ -548,7 +554,7 @@ class SaltCheck(object):
     @staticmethod
     def __assert_not_empty(returned):
         '''
-        Test if a returned value is not empty 
+        Test if a returned value is not empty
         '''
         result = "Pass"
         try:
@@ -674,4 +680,3 @@ class StateTestLoader(object):
             else:
                 log.info("path is not a directory= {}".format(full_path))
         return
-
