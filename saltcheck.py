@@ -322,7 +322,8 @@ class SaltCheck(object):
         if expected_return:
             tots += 1
             log.info("__is_valid_test has valid_expected_return")
-        elif assertion in ["assertEmpty", "assertNotEmpty"]:
+        elif assertion in ["assertEmpty", "assertNotEmpty",
+                           "assertTrue", "assertFalse"]:
             tots += 1
             log.info("__is_valid_test with no return")
         log.info("__is_valid_test score: {}".format(tots))
@@ -356,12 +357,10 @@ class SaltCheck(object):
             args = test_dict.get('args', None)
             kwargs = test_dict.get('kwargs', None)
             assertion = test_dict['assertion']
-            try:
-                expected_return = test_dict['expected-return']
-            except KeyError:
-                pass
+            expected_return = test_dict.get('expected-return', None)
             actual_return = self.call_salt_command(mod_and_func, args, kwargs)
-            if assertion not in ["assertIn", "assertNotIn", "assertEmpty", "assertNotEmpty"]:
+            if assertion not in ["assertIn", "assertNotIn", "assertEmpty", "assertNotEmpty",
+                                 "assertTrue", "assertFalse"]:
                 expected_return = self.cast_expected_to_returned_type(expected_return, actual_return)
             if assertion == "assertEqual":
                 value = self.__assert_equal(expected_return, actual_return)
