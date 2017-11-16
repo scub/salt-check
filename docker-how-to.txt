@@ -1,6 +1,8 @@
 This shows how to run docker to test new functions with saltcheck
 
-docker run --add-host=salt:127.0.0.1 --rm -itv  ~/salt-check-community-code/salt-check/salt:/srv/salt/  -v ~/salt-check-community-code/salt-check/pillar:/srv/pillar -v ~/salt-check-community-code/salt-check/minion_config/minion:/etc/salt/minion   ubuntu16 /bin/bash
+# now sharing my docker image for saltcheck tests:  wcannon/saltcheck
+
+sudo docker run --add-host=salt:127.0.0.1 --rm -itv  ~/salt-check-community-code/salt-check/salt:/srv/salt/  -v ~/salt-check-community-code/salt-check/pillar:/srv/pillar -v ~/salt-check-community-code/salt-check/minion_config/minion:/etc/salt/minion wcannon/saltcheck:1.0 bash
 
 # mapping the minion file to /etc/salt/minion means we don't need --local flag
 
