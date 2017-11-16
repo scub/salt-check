@@ -13,8 +13,9 @@ MAINTAINER William Cannon
 # Install salt-minion
 # Ref: https://repo.saltstack.com/#ubuntu 
 ############################################################
-# Update repository sources and install wget to pull in SaltStack's GPG key
-RUN apt-get update && apt-get install -y wget
+RUN apt-get update && apt-get install -y wget sudo python-pip
+
+RUN pip install --upgrade pip
 
 # Add salt repo key
 RUN wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | apt-key add -
