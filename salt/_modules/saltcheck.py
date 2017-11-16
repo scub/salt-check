@@ -251,7 +251,8 @@ def _get_state_sls(state):
             if i['__sls__'] not in sls_list_state:
                 sls_list_state.append(i['__sls__'])
     except Exception:
-        raise
+        # raise
+        pass
     return sls_list_state
 
 def _refresh_saltcheck_tests_dir(dirpath):
