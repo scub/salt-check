@@ -266,9 +266,8 @@ def _refresh_saltcheck_tests_dir(dirpath):
 
     state = mypath_list[-2]
     source = "salt://" + state + os.sep + "saltcheck-tests"
-    dest = mypath_list[:-1]
-    dest = dirpath
-    __salt__['cp.get_dir'](source, dirpath)
+    dest = os.sep + os.sep.join(mypath_list[:-1])
+    __salt__['cp.get_dir'](source, dest)
     return
 
 
