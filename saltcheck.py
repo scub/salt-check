@@ -263,9 +263,13 @@ def _refresh_saltcheck_tests_dir(dirpath):
     mypath_list = dirpath.split(os.sep)
     mypath_list = [i for i in mypath_list if i != '']  # removing empty chars
 
-    state = mypath_list[-2]
-    source = "salt://" + state + os.sep + "saltcheck-tests"
-    dest = mypath_list[:-1]
+    #state = mypath_list[-2]
+    state = mypath_list[6:]
+    state = os.path.join(*state)
+
+#    source = "salt://" + state + os.sep + "saltcheck-tests"
+#    dest = mypath_list[:-1]
+    source = "salt://" + state
     dest = dirpath
     __salt__['cp.get_dir'](source, dirpath)
     return
