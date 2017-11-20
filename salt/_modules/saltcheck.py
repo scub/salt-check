@@ -300,12 +300,23 @@ class SaltCheck(object):
              a test name,
              a valid module and function,
              a valid assertion,
-             an expected return value'''
-        tots = 0  # need total of >= 6 to be a valid test
+             an expected return value - if assertion type requires it'''
+        # 6 points needed for standard test
+        # 4 points needed for test with assertion not requiring expected return
+        tots = 0  
         m_and_f = test_dict.get('module_and_function', None)
         assertion = test_dict.get('assertion', None)
-        expected_return = test_dict.get('expected-return', None)
+        exp_ret_key = 'expected-return' in test_dict.keys()
+        exp_ret_val = test_dict.get('expected-return', None)
         log.info("__is_valid_test has test: {}".format(test_dict))
+        if assertion in ["assertEmpty",
+                         "assertNotEmpty",
+                         "assertTrue",
+                         "assertFalse"]:
+            required_total = 4
+        else:
+            required_total = 6
+ 
         if m_and_f:
             tots += 1
             module, function = m_and_f.split('.')
@@ -314,20 +325,19 @@ class SaltCheck(object):
             if _is_valid_function(module, function):
                 tots += 1
             log.info("__is_valid_test has valid m_and_f")
-        if assertion:
+        if assertion in self.assertions_list:
+            log.info("__is_valid_test has valid_assertion")
             tots += 1
-            if assertion in self.assertions_list:
+
+        if exp_ret_key:
+            tots += 1
+            
+        if exp_ret_val != None:
                 tots += 1
-                log.info("__is_valid_test has valid_assertion")
-        if expected_return:
-            tots += 1
-            log.info("__is_valid_test has valid_expected_return")
-        elif assertion in ["assertEmpty", "assertNotEmpty",
-                           "assertTrue", "assertFalse"]:
-            tots += 1
-            log.info("__is_valid_test with no return")
-        log.info("__is_valid_test score: {}".format(tots))
-        return tots >= 6
+
+        # log the test score for debug purposes
+        log.info("__test score: {}".format(tots))
+        return tots >= required_total
 
     def call_salt_command(self,
                           fun,
