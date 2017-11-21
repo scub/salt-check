@@ -13,7 +13,7 @@ MAINTAINER William Cannon
 # Install salt-minion
 # Ref: https://repo.saltstack.com/#ubuntu 
 ############################################################
-RUN apt-get update && apt-get install -y wget sudo python-pip
+RUN apt-get update && apt-get install -y wget sudo python-pip python-psutil vim
 
 RUN pip install --upgrade pip
 
