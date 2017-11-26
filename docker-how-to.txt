@@ -2,6 +2,9 @@ This shows how to run docker to test new functions with saltcheck
 
 # now sharing my docker image for saltcheck tests:  wcannon/saltcheck
 
+# First we'll need to build our docker image
+docker build -t wcannon/saltcheck .
+
 # Once built we can run the image and drop to a shell
 docker run --add-host=salt:127.0.0.1 --rm -it       \
     -v $(pwd)/salt:/srv/salt/                       \
