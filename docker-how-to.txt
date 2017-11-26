@@ -15,10 +15,21 @@ docker run --add-host=salt:127.0.0.1 --rm -it       \
 
 # mapping the minion file to /etc/salt/minion means we don't need --local flag
 
+# Call sync_modules when starting the image
+# or after you have made changes to the
+# saltcheck modules themselves.
 salt-call saltutil.sync_modules
 
+# You can quickly test the module is working
+# by requesting its Docstrings with -d.
 salt-call saltcheck -d
 
+# To run all available tests in the "apache" state tree
 salt-call saltcheck.run_state_tests apache
 
+# To run all tests for our entire top state
 salt-call saltcheck.run_highstate_tests
+
+# To run our standard_test set to validate
+# expected funcationality.
+salt-call saltcheck.run_state_tests standard_tests
