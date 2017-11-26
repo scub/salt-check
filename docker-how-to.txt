@@ -33,3 +33,29 @@ salt-call saltcheck.run_highstate_tests
 # To run our standard_test set to validate
 # expected funcationality.
 salt-call saltcheck.run_state_tests standard_tests
+
+## Some basic scripts have been added to
+## help with this process:
+##
+## sbin/ -
+##   contains surface scripts intended to be run by
+##   humans outside of the container.
+##
+## sbin/docker -
+##   contains internal scripts intended to be run by
+##   docker run, or otherwise within the context of the
+##   container itself.
+##
+
+# Creates the docker image when necessary,
+# and drops directly into a bash shell.
+./sbin/env.sh
+
+# Call sync_modules and run all available tests
+# within the standard_tests state tree.
+./sbin/run_standard_tests.sh
+
+# Call sync_modules and run all available tests
+# for this machines top state.
+./sbin/run_highstate_tests.sh
+
