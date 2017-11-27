@@ -200,6 +200,104 @@ def run_highstate_tests():
     return out_list
 
 
+def show_tests(state=None):
+    '''
+    Show all tests that will be executed in a state tree.
+    If a state is provided, only tests for that state will
+    be shown otherwise all tests are returned.
+
+    :param str state: the name of a user defined state
+
+    CLI Example::
+      salt '*' saltcheck.show_tests
+      salt '*' saltcheck.show_tests apache
+    '''
+    scheck = SaltCheck()
+    results = {"Tests":dict()}
+
+    # Generate StateTestLoaders for the provided state(s)
+    for (stl, test_files) in _gen_StateTestLoader(scheck, state):
+        results["Tests"].update(test_files)
+
+    # Tag missing tests (unnecessary to present?)
+    for state in _get_states(state):
+        # If we don't have any tests for this state stamp
+        # it with '[NO TESTS FOUND]' and move along.
+        if (state not in results["Tests"].keys()) or \
+            not len(results["Tests"][state]):
+            results["Tests"][state] = ['[NO TESTS FOUND]']
+
+    return results
+
+
+def _gen_StateTestLoader(scheck,state=None):
+    '''
+    Generator creates StateTestLoader objects for a state
+    tree once per iteration. If no state is provided
+    StateTestLoaders are generated for the entire top state.
+
+    :param SaltCheck scheck: single instance of a SaltCheck object
+    :param str,list state: a list or single state to generate test loaders for.
+    '''
+    # Gather our search paths for our test loader
+    paths      = scheck.get_state_search_path_list()
+    # Normalize the list of states to generate loaders for
+    all_states = _get_states(state)
+
+    for state in all_states:
+        # Catalog relative paths for test files
+        test_relative_paths = { state : list() }
+        # Initialize our StateTestLoader
+        stl = StateTestLoader(search_paths=paths)
+        # Convert the sls name to its path in the minion cache
+        mypath = stl.convert_sls_to_path(state)
+        # Gather all .tst files into "stl.test_files"
+        stl.add_test_files_for_sls(mypath)
+
+        # Iterate over gathered tst files
+        for test_path in stl.test_files:
+            # Strip the minion cache from the test's path
+            test = test_path.split(os.sep+mypath+os.sep)[1]
+            # Append the relative path of the test to our catalog
+            test_relative_paths[state].append(test)
+
+        # Soft-return our loader and list of tests
+        yield (stl, test_relative_paths)
+
+    # Return from our generator
+    return
+
+
+def _get_states(state=None):
+    '''
+    Generate and return a list of uniq __sls__ names
+    from a given state or, if no state is provided, the
+    entire state tree.
+
+    :param str,list state: a list or single state to render into __sls__'s.
+    '''
+    # Normalize list of state(s) based on the
+    # type of the state parameter.
+    if state is None:
+        sls_list = _get_top_states()
+    elif isinstance(state, list):
+        sls_list = state
+    else:
+        sls_list = [state,]
+
+    # Seed nothing and use show_low_sls
+    all_states = []
+
+    # This behavior causes us to skip-over
+    # some state layouts. Possibly intentionally.
+    for top_state in sls_list:
+        for state in _get_state_sls(top_state):
+            if state not in all_states:
+                all_states.append(state)
+
+    return all_states
+
+
 def _render_file(file_path):
     '''call the salt utility to render a file'''
     # salt-call slsutil.renderer /srv/salt/jinjatest/saltcheck-tests/test1.tst
