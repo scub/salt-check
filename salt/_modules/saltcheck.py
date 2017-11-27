@@ -159,45 +159,23 @@ def run_highstate_tests():
       salt '*' saltcheck.run_highstate_tests
     '''
     scheck = SaltCheck()
-    paths = scheck.get_state_search_path_list()
-    stl = StateTestLoader(search_paths=paths)
     results = {}
     sls_list = _get_top_states()
+
+    # Generate a list of states for highstate.
     all_states = []
     for top_state in sls_list:
-        sls_list = _get_state_sls(top_state)
-        for state in sls_list:
+        for state in _get_state_sls(top_state):
             if state not in all_states:
                 all_states.append(state)
 
-    for state_name in all_states:
-        mypath = stl.convert_sls_to_path(state_name)
-        stl.add_test_files_for_sls(mypath)
-        stl.load_test_suite()
-        results_dict = {}
-        for key, value in stl.test_dict.items():
-            result = scheck.run_test(value)
-            results_dict[key] = result
-        results[state_name] = results_dict
-    passed = 0
-    failed = 0
-    missing_tests = 0
-    for state in results:
-        if len(results[state].items()) == 0:
-            missing_tests = missing_tests + 1
-        else:
-            for dummy, val in results[state].items():
-                log.info("dummy={}, val={}".format(dummy, val))
-                if val.startswith('Pass'):
-                    passed = passed + 1
-                if val.startswith('Fail'):
-                    failed = failed + 1
-    out_list = []
-    for key, value in results.items():
-        out_list.append({key: value})
-    out_list.sort()
-    out_list.append({"TEST RESULTS": {'Passed': passed, 'Failed': failed, 'Missing Tests': missing_tests}})
-    return out_list
+    # Build dictionary of test results for targeted states
+    for tests in _get_test_results(scheck, all_states):
+        for state_name, test_results in tests.iteritems():
+            results.update({state_name:test_results})
+
+    # Return report from test results
+    return _gen_test_report( all_states, results )
 
 
 def show_tests(state=None):
@@ -296,6 +274,84 @@ def _get_states(state=None):
                 all_states.append(state)
 
     return all_states
+
+
+def _get_test_results(scheck,state=None):
+    '''Runs tests for a given state or at the top-state'''
+
+    # Generator parses states one at a time
+    for (stl, test_files) in _gen_StateTestLoader(scheck, state):
+
+        results = {}
+
+        # Strip the only key in test_files to get our state name
+        state = test_files.keys()[0]
+        # Render scraped test files into dictionaries
+        stl.load_test_suite()
+        # Grab place holder for test results
+        ( results_dict, results[state] ) = ( dict(), dict() )
+
+        # Iterate over our rendered tests and run them
+        for test_name, test_body in stl.test_dict.items():
+            # Run rendered test body
+            result = scheck.run_test(test_body)
+            # Store those results under the test name
+            results_dict[test_name] = result
+
+        # Update the master dictionary with the individual results
+        results[state].update(results_dict)
+
+        # Soft-return this states test results
+        yield results
+
+    # Return from our generator
+    return
+
+
+def _gen_test_report(state_list, result_dict):
+    '''Obtain Pass/Fail/Missing test counts for states'''
+    passed, failed, missing = 0, 0, 0
+    states_missing_tests    = []
+    results                 = []
+
+    # Identify states missing tests
+    for state_name in state_list:
+
+        # Does the state exist in the result set?
+        if state_name not in result_dict:
+            states_missing_tests.append(state_name)
+            missing += 1
+            continue
+
+        # Do we have at least one result for this state?
+        if len(result_dict[state_name]) == 0:
+            states_missing_tests.append(state_name)
+            missing += 1
+            continue
+
+    # Obtain pass/fail counts for tests we have
+    for state_name, test_set in result_dict.items():
+        for test_name, test_result in test_set.items():
+            log.info("dummy={}, val={}".format(test_name, test_result))
+            if test_result.startswith('Pass'):
+                passed += 1
+            elif test_result.startswith('Fail'):
+                failed += 1
+
+    # Copy test results into local scope for manipulation
+    for state_name, test_info in result_dict.items():
+        results.append( {state_name:test_info} )
+
+    # Tag all states missing tests
+    results.append( '' if missing == 0 else {"STATES WITHOUT TESTS":states_missing_tests} )
+
+    # Add pass/fail/missing sums to the result
+    results.append( {"TEST RESULTS": {
+        "Passed"  : passed,
+        "Failed"  : failed,
+        "Missing" : missing}} )
+
+    return results
 
 
 def _render_file(file_path):
